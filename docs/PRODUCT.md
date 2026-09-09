@@ -8,8 +8,11 @@ AI summaries — without depending on AI for core function.
 
 ## Pilot
 
-One project: **STS-9.9 MW Biomass Power Plant** (EPS manages ~23 projects total;
-this pilot proves the model before wider rollout).
+One project: **STS-9.9 MW Biomass Power Plant** located in **Thung Song, Nakhon Si Thammarat, Thailand**
+- Location: อำเภอทุ่งสง จังหวัดนครศรีธรรมราช
+- Baseline Coordinates: Latitude ~8.096970 N, Longitude ~99.682458 E (derived from site survey grid UTM 47N 575190, 895081; pending precise Google Maps pin confirmation)
+- Timezone: `Asia/Bangkok` (UTC+7)
+(EPS manages ~23 projects total; this pilot proves the model before wider rollout).
 
 ## Core principle
 

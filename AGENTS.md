@@ -15,3 +15,4 @@
 9. Run lint/build after changes if the tooling is available.
 10. Update `docs/TASKS.md` when you change project status. Keep it short.
 11. End with a short completion summary — no long narrative reports.
+12. Follow UX/UI Craft Floor & Operate mode principles (`.agents/skills/impeccable/reference/craft-floor.md` & `operate.md`) — consistency over novelty, fast state transitions (150–250ms), accessible contrast (≥4.5:1), and complete component states.

@@ -1,6 +1,6 @@
 # Tasks / Status
 
-## Status: Foundation prepared, awaiting approval to start Phase 1 slice 1
+## Status: Frontend shell + Auth UI built, Auth wiring untested against live Supabase
 
 Repo was empty — created project scaffold, docs, and a draft core schema. No
 application features implemented yet.
@@ -12,6 +12,14 @@ application features implemented yet.
 - [x] AGENTS.md, CLAUDE.md, README.md, .env.example
 - [x] Draft schema: supabase/migrations/0001_core_schema.sql (RLS policies stubbed,
       not finalized — needs review against PERMISSIONS.md before Phase 1 slice 1)
+- [x] Frontend shell: OKLCH tokens, Tailwind theme, AppShell (sidebar + mobile nav),
+      UI primitives, routes (overview, login, daily-report form w/ validation,
+      history, updates, admin placeholders) — `npm run build` green, screenshots checked
+- [x] Login page: email/password + 1-click demo sign-in for 3 personas
+      (contractor_user / site_admin / head_office_admin per DEMO_ROLES.md;
+      demo-only, roles still come from DB via RLS — remove before production)
+- [x] Project Map & Live Weather widget (Thung Song site) + Thai localization
+- [x] Production build validated (10/10 routes passing) & preparing GitHub/Vercel deployment
 
 ## Next (vertical slice order — do not skip ahead)
 

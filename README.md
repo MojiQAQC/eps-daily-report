@@ -39,3 +39,4 @@ docs/                Product, architecture, data model, permissions, decisions, 
 - `docs/PERMISSIONS.md` — roles and access rules
 - `docs/DECISIONS.md` — confirmed decisions
 - `docs/TASKS.md` — current status, what's next
+- `docs/DEMO_ROLES.md` — demo architecture, roles & test credentials

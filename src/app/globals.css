@@ -1,3 +1,109 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * EPS Daily Report — design tokens (OKLCH throughout).
+ * Mood: midday on a biomass construction site — sun-bleached dust,
+ * hi-vis vests, a foreman checking a phone with dusty gloves.
+ * Strategy: Restrained. Pure-white bg; moss-olive primary carries the
+ * brand, baked-ember accent used sparingly for priority/state only.
+ */
+:root {
+  --bg: oklch(1 0 0);
+  --surface: oklch(0.965 0.01 130);
+  --surface-2: oklch(0.935 0.014 130);
+  --ink: oklch(0.25 0.032 130);
+  --muted: oklch(0.5 0.022 130);
+  --line: oklch(0.875 0.012 130);
+
+  --primary: oklch(0.48 0.15 132);
+  --primary-strong: oklch(0.415 0.148 132);
+  --on-primary: oklch(1 0 0);
+
+  --accent: oklch(0.6 0.145 48);
+  --on-accent: oklch(1 0 0);
+
+  --danger: oklch(0.55 0.19 25);
+  --on-danger: oklch(1 0 0);
+  --warning-bg: oklch(0.94 0.06 90);
+  --warning-ink: oklch(0.4 0.08 75);
+  --success: oklch(0.5 0.15 145);
+  --on-success: oklch(1 0 0);
+
+  --z-nav: 30;
+  --z-sticky: 40;
+  --z-backdrop: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+
+  p {
+    text-wrap: pretty;
+    max-width: 70ch;
+  }
+
+  ::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--surface-2);
+    border-radius: 8px;
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--line);
+    opacity: 0.55;
+    animation: skeleton-pulse 1.6s ease-out infinite;
+  }
+
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 0.6; }
+  }
+}

@@ -1,14 +1,20 @@
 import "./globals.css";
+import { AppShell } from "@/components/app-shell";
 
 export const metadata = {
-  title: "EPS Daily Report & Site Collaboration",
-  description: "Structured daily site reporting for EPS construction projects",
+  title: {
+    default: "EPS Daily Report & ความร่วมมือหน้างาน",
+    template: "%s · EPS Daily Report",
+  },
+  description: "ระบบรายงานประจำวันและติดตามงานก่อสร้าง EPS",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="th">
+      <body className="bg-bg text-ink antialiased">
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }

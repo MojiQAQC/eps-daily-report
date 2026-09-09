@@ -202,6 +202,17 @@ alter table daily_report_safety_topics enable row level security;
 alter table attachments enable row level security;
 alter table user_project_access enable row level security;
 
+-- Master data + profiles: enabled with no policies yet (deny-all except
+-- service_role), same "lock down now, add policies later" pattern as
+-- user_project_access above. profiles especially must never be open to the
+-- anon/authenticated API by default (role + contractor_id are sensitive).
+alter table profiles enable row level security;
+alter table contractors enable row level security;
+alter table disciplines enable row level security;
+alter table contractor_disciplines enable row level security;
+alter table projects enable row level security;
+alter table project_contractors enable row level security;
+
 -- Example policy shape (repeat per table, or wrap in a shared function):
 -- head_office_admin sees everything; others see only rows matching their
 -- user_project_access grants for that project/contractor/discipline.

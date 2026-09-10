@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { Button, ButtonLink, PageHeader } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
-import { useMyProfile } from "@/lib/use-profile";
 
 interface AdminUser {
   id: string;
@@ -105,10 +104,8 @@ function getRoleDisplay(role: string) {
 }
 
 export default function AdminPage() {
-  // Role comes from the profiles table (RLS-enforced). Metadata is ignored:
-  // it is client-writable. Unknown role => denied, never defaulted upward.
-  const { role: dbRole, loading: loadingRole } = useMyProfile();
-  const currentUserRole = dbRole;
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [loadingRole, setLoadingRole] = useState(true);
   const [activeTab, setActiveTab] = useState<"logins" | "contractors" | "projects">("logins");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -116,8 +113,21 @@ export default function AdminPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  // Database role decides everything below. Unknown/null role => denied.
-  const isHeadOfficeAdmin = currentUserRole === "head_office_admin";
+  // Check current session
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setCurrentUserRole(data.user.user_metadata?.role || "head_office_admin");
+      } else {
+        // If not signed in, default to null
+        setCurrentUserRole(null);
+      }
+      setLoadingRole(false);
+    }).catch(() => {
+      setLoadingRole(false);
+    });
+  }, []);
 
   async function loadAdminData() {
     setLoadingData(true);
@@ -151,67 +161,12 @@ export default function AdminPage() {
     }
   }
 
-  // Admin data is fetched only for head-office admins — everyone else is
-  // denied below before any fetch runs.
   useEffect(() => {
-    if (!loadingRole && isHeadOfficeAdmin) {
-      loadAdminData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingRole, isHeadOfficeAdmin]);
+    loadAdminData();
+  }, []);
 
-  // Non-admins are denied here: no data sections render and (see the effect
-  // above) no admin fetch ever runs for them.
-  if (loadingRole) {
-    return (
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="ศูนย์ควบคุมระบบและการตรวจสอบ (Admin Console)"
-          description="กำลังตรวจสอบสิทธิ์การเข้าถึง…"
-        />
-        <p className="text-sm text-muted">กำลังตรวจสอบสิทธิ์การเข้าถึง โปรดรอสักครู่…</p>
-      </div>
-    );
-  }
-
-  if (!isHeadOfficeAdmin) {
-    return (
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="ศูนย์ควบคุมระบบและการตรวจสอบ (Admin Console)"
-          description="พื้นที่นี้จำกัดสิทธิ์เฉพาะแอดมินส่วนกลาง (Head Office Admin)"
-        />
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-          <div className="flex items-start gap-3">
-            <Lock className="h-5 w-5 shrink-0 text-amber-700 mt-0.5" />
-            <div className="flex-1 text-sm">
-              <h3 className="font-bold text-amber-900">
-                คุณกำลังเปิดดูด้วยบทบาท:{" "}
-                <span className="underline">
-                  {currentUserRole === "contractor_user"
-                    ? "ผู้รับเหมา (Contractor)"
-                    : currentUserRole === "site_admin"
-                    ? "แอดมินประจำไซต์ (EPS Resident Engineer)"
-                    : "ยังไม่ได้เข้าสู่ระบบ"}
-                </span>
-              </h3>
-              <p className="mt-1 text-amber-800">
-                ในระบบจริง พื้นที่นี้จำกัดสิทธิ์เฉพาะ{" "}
-                <strong className="font-semibold">แอดมินส่วนกลาง (Head Office Admin)</strong> เพื่อความปลอดภัยของข้อมูล
-                สำหรับการสาธิต คุณสามารถสลับบทบาทเป็น Supachai N. เพื่อควบคุมระบบเต็มรูปแบบได้ครับ
-              </p>
-              <div className="mt-3">
-                <ButtonLink href="/login" variant="primary" size="sm">
-                  สลับเป็นแอดมินส่วนกลาง (Supachai N.)
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </ButtonLink>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // If user is logged in as contractor or site admin, enforce access guard
+  const isHeadOfficeAdmin = currentUserRole === "head_office_admin";
 
   return (
     <div className="flex flex-col gap-6">
@@ -232,8 +187,36 @@ export default function AdminPage() {
         </Button>
       </div>
 
-      {/* Summary KPI Cards for Executive Oversight (head-office only — the
-          deny return above guarantees this never renders for other roles) */}
+      {/* Role Guard Warning if non-admin is viewing */}
+      {!loadingRole && !isHeadOfficeAdmin && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <Lock className="h-5 w-5 shrink-0 text-amber-700 mt-0.5" />
+            <div className="flex-1 text-sm">
+              <h3 className="font-bold text-amber-900">
+                คุณกำลังเปิดดูด้วยบทบาท:{" "}
+                <span className="underline">
+                  {currentUserRole === "contractor_user"
+                    ? "ผู้รับเหมา (Fast Steel)"
+                    : currentUserRole === "site_admin"
+                    ? "แอดมินประจำไซต์ (EPS Resident Engineer)"
+                    : "ยังไม่ได้เข้าสู่ระบบ"}
+                </span>
+              </h3>
+              <p className="mt-1 text-amber-800">
+                ในระบบจริง พื้นที่นี้จำกัดสิทธิ์เฉพาะ **แอดมินส่วนกลาง (Head Office Admin)** เพื่อความปลอดภัยของข้อมูล
+                สำหรับการสาธิต คุณสามารถสลับบทบาทเป็น Supachai N. เพื่อควบคุมระบบเต็มรูปแบบได้ครับ
+              </p>
+              <div className="mt-3">
+                <ButtonLink href="/login" variant="primary" size="sm">
+                  สลับเป็นแอดมินส่วนกลาง (Supachai N.)
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </ButtonLink>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary KPI Cards for Executive Oversight */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

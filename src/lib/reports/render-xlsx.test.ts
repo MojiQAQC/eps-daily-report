@@ -17,6 +17,7 @@ const samplePayload: ReportPayload = {
     { id: "a1", daily_report_id: "r1", area: "Stack", description: "งานเชื่อม", planned_progress: 20, actual_progress: 20 },
   ],
   safety: { daily_report_id: "r1", accident_status: "ไม่มีอุบัติเหตุ" },
+  attachments: [],
 };
 
 describe("renderReportXlsx", () => {

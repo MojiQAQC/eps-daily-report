@@ -112,6 +112,46 @@ export function ReportView({ payload }: { payload: ReportPayload }) {
           <p className="mt-2 text-sm text-muted">ไม่มีข้อมูล</p>
         )}
       </section>
+
+      {payload.attachments.some((a) => a.kind === "progress_photo") && (
+        <section>
+          <h2 className="text-base font-bold">รูปความคืบหน้า (Progress Photos)</h2>
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {payload.attachments
+              .filter((a) => a.kind === "progress_photo" && a.url)
+              .map((a, i) => (
+                <div key={a.id} className="flex flex-col gap-1">
+                  <img
+                    src={a.url ?? undefined}
+                    alt={`รูปความคืบหน้า No.${i + 1}`}
+                    className="h-32 w-full rounded-md border border-line object-cover"
+                  />
+                  <span className="text-xs text-muted">No.{i + 1}</span>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
+
+      {payload.attachments.some((a) => a.kind === "safety_photo") && (
+        <section>
+          <h2 className="text-base font-bold">รูปความปลอดภัย (Safety Photos)</h2>
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {payload.attachments
+              .filter((a) => a.kind === "safety_photo" && a.url)
+              .map((a, i) => (
+                <div key={a.id} className="flex flex-col gap-1">
+                  <img
+                    src={a.url ?? undefined}
+                    alt={`รูปความปลอดภัย No.${i + 1}`}
+                    className="h-32 w-full rounded-md border border-line object-cover"
+                  />
+                  <span className="text-xs text-muted">No.{i + 1}</span>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

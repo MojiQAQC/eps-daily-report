@@ -117,6 +117,14 @@ export interface DailyReportSafety {
   remarks?: string | null;
 }
 
+export interface DailyReportAttachment {
+  id: string;
+  daily_report_id: string;
+  kind: 'progress_photo' | 'safety_photo';
+  storage_path: string;
+  url?: string | null;
+}
+
 export interface ReportPayload {
   report: DailyReport;
   projectName: string;
@@ -126,4 +134,5 @@ export interface ReportPayload {
   workforce: DailyReportWorkforce[];
   activities: DailyReportActivity[];
   safety: DailyReportSafety | null;
+  attachments: DailyReportAttachment[];
 }

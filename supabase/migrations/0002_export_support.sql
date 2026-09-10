@@ -79,3 +79,16 @@ create policy contractors_select_authenticated on contractors for select
 
 create policy projects_select_authenticated on projects for select
   using (auth.role() = 'authenticated');
+
+-- Self-read policies: without these, every auth.uid()-filtered subquery inside
+-- daily_reports_select and the new child-table policies above returns zero rows
+-- for everyone (RLS applies recursively to tables referenced in another policy's
+-- subquery), including head_office_admin checking their own role. Scoped to
+-- "= auth.uid()" only — this does not open either table broadly, preserving the
+-- "profiles must never be open to anon/authenticated by default" principle from
+-- the 0001 migration.
+create policy profiles_select_own on profiles for select
+  using (id = auth.uid());
+
+create policy user_project_access_select_own on user_project_access for select
+  using (user_id = auth.uid());

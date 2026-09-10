@@ -45,10 +45,16 @@ project_updates
   (progress_update | completed_work | in_progress | next_tomorrow | issue_concern | announcement)
   title, description, area, status, priority, owner, due_date
   created_by, created_at
-attachments   (photo storage_path/url, linked to a project_update or daily_report)
+attachments   (photo storage_path/url, linked to a project_update or daily_report;
+               kind: 'progress_photo' | 'safety_photo' | null for other attachment
+               types — added in migration 0003)
 ```
 
 No reactions/comments/chat/threads in Phase 1.
+
+Daily report photos live in the private `daily-report-photos` Storage bucket
+(path convention `{report_id}/{kind}/{uuid}-{filename}`, size/type limited by
+migration 0004); access is RLS-gated on `storage.objects`, not public.
 
 ## Critical Work / Priority
 

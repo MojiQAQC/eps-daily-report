@@ -16,6 +16,8 @@ function makeSupabaseStub(overrides: {
       const builder: any = {
         select: () => builder,
         eq: () => builder,
+        in: () => builder,
+        order: () => builder,
         single: async () => {
           if (table === "daily_reports")
             return { data: overrides.report, error: overrides.reportError ?? null };

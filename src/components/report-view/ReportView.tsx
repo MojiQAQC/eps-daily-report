@@ -113,7 +113,7 @@ export function ReportView({ payload }: { payload: ReportPayload }) {
         )}
       </section>
 
-      {payload.attachments.some((a) => a.kind === "progress_photo") && (
+      {payload.attachments.some((a) => a.kind === "progress_photo" && a.url) && (
         <section>
           <h2 className="text-base font-bold">รูปความคืบหน้า (Progress Photos)</h2>
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -133,7 +133,7 @@ export function ReportView({ payload }: { payload: ReportPayload }) {
         </section>
       )}
 
-      {payload.attachments.some((a) => a.kind === "safety_photo") && (
+      {payload.attachments.some((a) => a.kind === "safety_photo" && a.url) && (
         <section>
           <h2 className="text-base font-bold">รูปความปลอดภัย (Safety Photos)</h2>
           <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">

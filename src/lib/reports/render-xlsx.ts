@@ -44,7 +44,8 @@ export async function renderReportXlsx(payload: ReportPayload): Promise<Buffer> 
     sheet.addRow(["Category", "Filename"]);
     for (const a of payload.attachments) {
       const filename = a.storage_path.split("/").pop() ?? a.storage_path;
-      const category = a.kind === "progress_photo" ? "Progress Photo" : "Safety Photo";
+      const category =
+        a.kind === "progress_photo" ? "Progress Photo" : a.kind === "safety_photo" ? "Safety Photo" : "Photo";
       sheet.addRow([category, filename]);
     }
   } else {

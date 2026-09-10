@@ -45,7 +45,12 @@ export async function assembleReportPayload(
     supabase.from("daily_report_workforce").select("*").eq("daily_report_id", reportId),
     supabase.from("daily_report_activities").select("*").eq("daily_report_id", reportId),
     supabase.from("daily_report_safety").select("*").eq("daily_report_id", reportId).single(),
-    supabase.from("attachments").select("*").eq("daily_report_id", reportId),
+    supabase
+      .from("attachments")
+      .select("*")
+      .eq("daily_report_id", reportId)
+      .in("kind", ["progress_photo", "safety_photo"])
+      .order("created_at", { ascending: true }),
   ]);
 
   const attachments: DailyReportAttachment[] = await Promise.all(

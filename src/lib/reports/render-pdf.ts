@@ -31,12 +31,14 @@ export async function renderReportPdf(payload: ReportPayload): Promise<Buffer> {
     .inline-flex { display: inline-flex; }
 
     .gap-1 { gap: 0.25rem; }
+    .gap-3 { gap: 0.75rem; }
     .gap-4 { gap: 1rem; }
     .gap-6 { gap: 1.5rem; }
 
     .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     @media (min-width: 640px) {
       .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     .p-8 { padding: 2rem; }
@@ -46,9 +48,11 @@ export async function renderReportPdf(payload: ReportPayload): Promise<Buffer> {
     .mt-2 { margin-top: 0.5rem; }
 
     .w-full { width: 100%; }
+    .h-32 { height: 8rem; }
     .text-left { text-align: left; }
     .text-right { text-align: right; }
     .align-top { vertical-align: top; }
+    .object-cover { object-fit: cover; }
 
     .text-xs { font-size: 0.75rem; line-height: 1.4; }
     .text-sm { font-size: 0.875rem; line-height: 1.5; }
@@ -58,7 +62,9 @@ export async function renderReportPdf(payload: ReportPayload): Promise<Buffer> {
     .font-bold { font-weight: 700; }
 
     .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+    .border { border-width: 1px; border-style: solid; }
     .rounded-full { border-radius: 9999px; }
+    .rounded-md { border-radius: 0.375rem; }
 
     table { border-collapse: collapse; }
   </style>

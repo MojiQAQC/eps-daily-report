@@ -228,7 +228,11 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         .select("id")
         .single();
       if (reportError || !report) {
-        setSubmitError(`บันทึกรายงานไม่สำเร็จ: ${reportError?.message ?? "unknown error"}`);
+        if (reportError?.code === "23505") {
+          setSubmitError("มีรายงานประเภทนี้สำหรับวันที่นี้อยู่แล้ว");
+        } else {
+          setSubmitError(`บันทึกรายงานไม่สำเร็จ: ${reportError?.message ?? "unknown error"}`);
+        }
         return;
       }
 

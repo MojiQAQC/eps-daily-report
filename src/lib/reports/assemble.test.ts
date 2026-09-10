@@ -9,6 +9,7 @@ function makeSupabaseStub(overrides: {
   workforce: any[];
   activities: any[];
   safety: any | null;
+  attachments: any[];
 }) {
   return {
     from(table: string) {
@@ -28,10 +29,20 @@ function makeSupabaseStub(overrides: {
             return resolve({ data: overrides.workforce, error: null });
           if (table === "daily_report_activities")
             return resolve({ data: overrides.activities, error: null });
+          if (table === "attachments")
+            return resolve({ data: overrides.attachments, error: null });
           return resolve({ data: [], error: null });
         },
       };
       return builder;
+    },
+    storage: {
+      from: () => ({
+        createSignedUrl: async (path: string) => ({
+          data: { signedUrl: `https://signed.example/${path}` },
+          error: null,
+        }),
+      }),
     },
   };
 }
@@ -48,6 +59,7 @@ describe("assembleReportPayload", () => {
       workforce: [{ id: "w1", daily_report_id: "r1", role_name: "รวมกำลังคนวันนี้", male_count: 15, female_count: 0 }],
       activities: [{ id: "a1", daily_report_id: "r1", description: "งาน A", planned_progress: 20, actual_progress: 20 }],
       safety: { daily_report_id: "r1", accident_status: "ไม่มีอุบัติเหตุ" },
+      attachments: [],
     });
 
     const payload = await assembleReportPayload(supabase as any, "r1");
@@ -64,7 +76,7 @@ describe("assembleReportPayload", () => {
     const supabase = makeSupabaseStub({
       report: null,
       reportError: { code: "PGRST116", message: "No rows returned" },
-      project: null, contractor: null, workforce: [], activities: [], safety: null,
+      project: null, contractor: null, workforce: [], activities: [], safety: null, attachments: [],
     });
     const payload = await assembleReportPayload(supabase as any, "missing");
     expect(payload).toBeNull();
@@ -74,10 +86,30 @@ describe("assembleReportPayload", () => {
     const supabase = makeSupabaseStub({
       report: null,
       reportError: { code: "500", message: "connection refused" },
-      project: null, contractor: null, workforce: [], activities: [], safety: null,
+      project: null, contractor: null, workforce: [], activities: [], safety: null, attachments: [],
     });
     await expect(assembleReportPayload(supabase as any, "r1")).rejects.toMatchObject({
       code: "500",
     });
+  });
+
+  it("attaches signed URLs to each photo attachment", async () => {
+    const supabase = makeSupabaseStub({
+      report: {
+        id: "r1", project_id: "p1", contractor_id: "c1", report_date: "2026-09-04",
+        report_type: "end_of_day_actual", status: "submitted", created_at: "2026-09-04T10:00:00Z",
+      },
+      project: { name: "STS-9.9 MW Biomass Power Plant", code: "STSBPP" },
+      contractor: { name: "RETS", short_code: "RETS" },
+      workforce: [], activities: [], safety: null,
+      attachments: [
+        { id: "a1", daily_report_id: "r1", kind: "progress_photo", storage_path: "r1/progress_photo/1-photo.jpg" },
+      ],
+    });
+
+    const payload = await assembleReportPayload(supabase as any, "r1");
+
+    expect(payload!.attachments).toHaveLength(1);
+    expect(payload!.attachments[0].url).toBe("https://signed.example/r1/progress_photo/1-photo.jpg");
   });
 });

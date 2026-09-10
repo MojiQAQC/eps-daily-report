@@ -11,9 +11,11 @@ import type { WorkPriority, WorkStatus } from "@/types";
 // ---------------------------------------------------------------------------
 
 type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+type ButtonSize = "default" | "sm";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
 }
 
@@ -27,8 +29,14 @@ const buttonStyles: Record<ButtonVariant, string> = {
   ghost: "text-ink hover:bg-surface active:bg-surface disabled:text-muted",
 };
 
+const sizeStyles: Record<ButtonSize, string> = {
+  default: "min-h-[44px] px-4 py-2 text-sm",
+  sm: "min-h-[36px] px-3 py-1.5 text-xs",
+};
+
 export function Button({
   variant = "primary",
+  size = "default",
   loading = false,
   disabled,
   className = "",
@@ -37,15 +45,15 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-200 disabled:cursor-not-allowed ${buttonStyles[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors duration-200 disabled:cursor-not-allowed ${buttonStyles[variant]} ${sizeStyles[size]} ${className}`}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...rest}
     >
       {loading && (
         <span
-          aria-hidden
           className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+          aria-hidden
         />
       )}
       {children}
@@ -56,18 +64,20 @@ export function Button({
 export function ButtonLink({
   href,
   variant = "primary",
+  size = "default",
   className = "",
   children,
 }: {
   href: string;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <Link
       href={href}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-200 ${buttonStyles[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors duration-200 ${buttonStyles[variant]} ${sizeStyles[size]} ${className}`}
     >
       {children}
     </Link>

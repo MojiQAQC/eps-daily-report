@@ -60,10 +60,10 @@ export default function LoginForm() {
   const [demoLoading, setDemoLoading] = useState<UserRole | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function signInWith(signInEmail: string, signInPassword: string) {
+  async function signInWith(signInEmail: string, signInPassword: string, personaName?: string, personaRole?: string) {
     setError(null);
     const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
       email: signInEmail,
       password: signInPassword,
     });
@@ -75,6 +75,24 @@ export default function LoginForm() {
       );
       return;
     }
+
+    // Log the sign in activity for Admin Audit Log
+    try {
+      await fetch("/api/admin/activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: signInEmail,
+          name: personaName || authData.user?.user_metadata?.full_name || signInEmail,
+          role: personaRole || authData.user?.user_metadata?.role || "contractor_user",
+          action: "LOGIN",
+          details: `เข้าสู่ระบบสำเร็จผ่าน ${personaRole ? "1-Click Demo Portal" : "แบบฟอร์มเข้าสู่ระบบ"}`,
+        }),
+      });
+    } catch {
+      // Non-blocking
+    }
+
     router.push("/");
     router.refresh();
   }
@@ -105,7 +123,7 @@ export default function LoginForm() {
   async function onDemoSignIn(persona: DemoPersona) {
     setDemoLoading(persona.role);
     try {
-      await signInWith(persona.email, persona.password);
+      await signInWith(persona.email, persona.password, persona.name, persona.role);
     } catch (err) {
       setError(
         err instanceof Error

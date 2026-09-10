@@ -40,6 +40,51 @@ interface ActivityRow {
   supervisor: string;
 }
 
+interface PhotoFile {
+  file: File;
+  previewUrl: string;
+}
+
+function PhotoPicker({
+  label,
+  photos,
+  onAdd,
+  onRemove,
+}: {
+  label: string;
+  photos: PhotoFile[];
+  onAdd: (files: FileList | null) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="text-sm font-semibold">{label}</label>
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => onAdd(e.target.files)}
+        className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-2 file:text-sm file:font-semibold file:text-ink hover:file:bg-surface2"
+      />
+      {photos.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {photos.map((p, i) => (
+            <div key={p.previewUrl} className="flex flex-col gap-1 rounded-md border border-line bg-surface p-2">
+              <img src={p.previewUrl} alt="" className="h-24 w-full rounded object-cover" />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted">No.{i + 1}</span>
+                <Button type="button" variant="ghost" size="sm" onClick={() => onRemove(i)} aria-label={`ลบรูปที่ ${i + 1}`}>
+                  ลบ
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -60,8 +105,23 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     { area: "", description: "", progress: "", status: "", supervisor: "" },
   ]);
   const [safetyNotes, setSafetyNotes] = useState("");
+  const [progressPhotos, setProgressPhotos] = useState<PhotoFile[]>([]);
+  const [safetyPhotos, setSafetyPhotos] = useState<PhotoFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [reviewed, setReviewed] = useState(false);
+
+  function addPhotos(files: FileList | null, setter: React.Dispatch<React.SetStateAction<PhotoFile[]>>) {
+    if (!files) return;
+    const next = Array.from(files).map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+    setter((prev) => [...prev, ...next]);
+  }
+
+  function removePhoto(index: number, setter: React.Dispatch<React.SetStateAction<PhotoFile[]>>) {
+    setter((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   const totals = useMemo(() => {
     let male = 0;
@@ -358,6 +418,24 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
             onChange={(e) => setSafetyNotes(e.target.value)}
           />
         </Field>
+      </section>
+
+      <section aria-labelledby="photos" className="flex flex-col gap-4">
+        <h2 id="photos" className="text-lg font-bold">
+          รูปภาพประกอบ (Photos)
+        </h2>
+        <PhotoPicker
+          label="รูปความคืบหน้า (Progress Photos)"
+          photos={progressPhotos}
+          onAdd={(files) => addPhotos(files, setProgressPhotos)}
+          onRemove={(i) => removePhoto(i, setProgressPhotos)}
+        />
+        <PhotoPicker
+          label="รูปความปลอดภัย (Safety Photos)"
+          photos={safetyPhotos}
+          onAdd={(files) => addPhotos(files, setSafetyPhotos)}
+          onRemove={(i) => removePhoto(i, setSafetyPhotos)}
+        />
       </section>
 
       {reviewed ? (

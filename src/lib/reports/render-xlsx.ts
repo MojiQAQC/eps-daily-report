@@ -37,6 +37,19 @@ export async function renderReportXlsx(payload: ReportPayload): Promise<Buffer> 
   } else {
     sheet.addRow(["No data"]);
   }
+  sheet.addRow([]);
+
+  sheet.addRow(["Photos"]);
+  if (payload.attachments.length > 0) {
+    sheet.addRow(["Category", "Filename"]);
+    for (const a of payload.attachments) {
+      const filename = a.storage_path.split("/").pop() ?? a.storage_path;
+      const category = a.kind === "progress_photo" ? "Progress Photo" : "Safety Photo";
+      sheet.addRow([category, filename]);
+    }
+  } else {
+    sheet.addRow(["No data"]);
+  }
 
   const arrayBuffer = await workbook.xlsx.writeBuffer();
   return Buffer.from(arrayBuffer);

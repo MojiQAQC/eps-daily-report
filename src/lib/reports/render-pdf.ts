@@ -1,9 +1,9 @@
 import { chromium } from "playwright";
-import { renderToStaticMarkup } from "react-dom/server";
 import { ReportView } from "@/components/report-view/ReportView";
 import type { ReportPayload } from "@/types";
 
 export async function renderReportPdf(payload: ReportPayload): Promise<Buffer> {
+  const { renderToStaticMarkup } = await import("react-dom/server");
   const bodyHtml = renderToStaticMarkup(ReportView({ payload }));
   const html = `<!doctype html>
 <html lang="th">

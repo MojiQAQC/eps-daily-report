@@ -3,15 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { assembleReportPayload } from "@/lib/reports/assemble";
 import { renderReportPdf } from "@/lib/reports/render-pdf";
 import { renderReportXlsx } from "@/lib/reports/render-xlsx";
-
-function filenameFor(payload: Awaited<ReturnType<typeof assembleReportPayload>>, ext: string) {
-  if (!payload) return `report.${ext}`;
-  const project = payload.projectCode ?? "PROJECT";
-  const contractor = payload.contractorShortCode ?? "CONTRACTOR";
-  const date = payload.report.report_date;
-  const number = payload.report.report_number ?? "000";
-  return `${project}_${contractor}_DAILY_${date}_${number}.${ext}`;
-}
+import { filenameFor } from "./filename";
 
 export async function GET(
   request: NextRequest,

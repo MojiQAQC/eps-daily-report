@@ -9,6 +9,9 @@ export async function renderReportXlsx(payload: ReportPayload): Promise<Buffer> 
   sheet.addRow(["Contractor", payload.contractorName, payload.contractorShortCode ?? ""]);
   sheet.addRow(["Report Date", payload.report.report_date]);
   sheet.addRow(["Report Type", payload.report.report_type]);
+  sheet.addRow(["Time Start", payload.report.time_start ?? ""]);
+  sheet.addRow(["Time Finish", payload.report.time_finish ?? ""]);
+  sheet.addRow(["Overtime Hours", payload.report.overtime_hours ?? ""]);
   sheet.addRow(["Cumulative Plan %", payload.report.cumulative_plan_pct ?? ""]);
   sheet.addRow(["Cumulative Actual %", payload.report.cumulative_actual_pct ?? ""]);
   sheet.addRow([]);
@@ -24,6 +27,15 @@ export async function renderReportXlsx(payload: ReportPayload): Promise<Buffer> 
   sheet.addRow(["Area", "Description", "Plan %", "Actual %", "Supervisor"]);
   for (const a of payload.activities) {
     sheet.addRow([a.area ?? "", a.description, a.planned_progress ?? "", a.actual_progress ?? "", a.supervisor ?? ""]);
+  }
+  sheet.addRow([]);
+
+  sheet.addRow(["Safety"]);
+  if (payload.safety) {
+    sheet.addRow(["Accident Status", payload.safety.accident_status ?? ""]);
+    sheet.addRow(["Remarks", payload.safety.remarks ?? ""]);
+  } else {
+    sheet.addRow(["No data"]);
   }
 
   const arrayBuffer = await workbook.xlsx.writeBuffer();

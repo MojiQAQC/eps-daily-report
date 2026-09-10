@@ -23,12 +23,23 @@ describe("renderReportXlsx", () => {
   it("produces a workbook with a Report sheet containing the header and activities", async () => {
     const buffer = await renderReportXlsx(samplePayload);
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buffer);
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
 
     const sheet = workbook.getWorksheet("Report");
     expect(sheet).toBeDefined();
     const values = sheet!.getSheetValues().flat().filter(Boolean).map(String);
     expect(values).toContain("STS-9.9 MW Biomass Power Plant");
     expect(values).toContain("งานเชื่อม");
+    expect(values).toContain("ไม่มีอุบัติเหตุ");
+  });
+
+  it("handles a null safety section without crashing", async () => {
+    const buffer = await renderReportXlsx({ ...samplePayload, safety: null });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
+    const sheet = workbook.getWorksheet("Report");
+    const values = sheet!.getSheetValues().flat().filter(Boolean).map(String);
+    expect(values).toContain("No data");
   });
 });

@@ -3,6 +3,7 @@ import { assembleReportPayload } from "./assemble";
 
 function makeSupabaseStub(overrides: {
   report: any;
+  reportError?: any;
   project: any;
   contractor: any;
   workforce: any[];
@@ -15,7 +16,8 @@ function makeSupabaseStub(overrides: {
         select: () => builder,
         eq: () => builder,
         single: async () => {
-          if (table === "daily_reports") return { data: overrides.report, error: null };
+          if (table === "daily_reports")
+            return { data: overrides.report, error: overrides.reportError ?? null };
           if (table === "projects") return { data: overrides.project, error: null };
           if (table === "contractors") return { data: overrides.contractor, error: null };
           if (table === "daily_report_safety") return { data: overrides.safety, error: null };
@@ -60,9 +62,22 @@ describe("assembleReportPayload", () => {
 
   it("returns null when the report doesn't exist or isn't visible under RLS", async () => {
     const supabase = makeSupabaseStub({
-      report: null, project: null, contractor: null, workforce: [], activities: [], safety: null,
+      report: null,
+      reportError: { code: "PGRST116", message: "No rows returned" },
+      project: null, contractor: null, workforce: [], activities: [], safety: null,
     });
     const payload = await assembleReportPayload(supabase as any, "missing");
     expect(payload).toBeNull();
+  });
+
+  it("propagates a real database error instead of treating it as not-found", async () => {
+    const supabase = makeSupabaseStub({
+      report: null,
+      reportError: { code: "500", message: "connection refused" },
+      project: null, contractor: null, workforce: [], activities: [], safety: null,
+    });
+    await expect(assembleReportPayload(supabase as any, "r1")).rejects.toMatchObject({
+      code: "500",
+    });
   });
 });

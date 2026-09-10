@@ -14,12 +14,13 @@ export async function assembleReportPayload(
   supabase: SupabaseLike,
   reportId: string,
 ): Promise<ReportPayload | null> {
-  const { data: report } = await supabase
+  const { data: report, error: reportError } = await supabase
     .from("daily_reports")
     .select("*")
     .eq("id", reportId)
     .single();
 
+  if (reportError && reportError.code !== "PGRST116") throw reportError;
   if (!report) return null;
 
   const [{ data: project }, { data: contractor }, workforceRes, activitiesRes, { data: safety }] =

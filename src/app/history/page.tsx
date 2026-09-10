@@ -1,3 +1,4 @@
+import { History } from "lucide-react";
 import { ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 
 export const metadata = {
@@ -13,6 +14,7 @@ export default function HistoryPage() {
         actions={<ButtonLink href="/daily-report" variant="secondary">เขียนรายงานใหม่</ButtonLink>}
       />
       <EmptyState
+        icon={History}
         title="ไม่พบรายงานในช่วงเวลานี้"
         body="เมื่อทีมงานส่งแผนงานเช้าและผลงานจริงสิ้นวัน รายงานจะแสดงที่นี่เพื่อเปรียบเทียบ Plan vs Actual เคียงคู่กัน ตัวกรองวันที่และประเภทจะแสดงพร้อมผลลัพธ์แรก"
       />

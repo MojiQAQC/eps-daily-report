@@ -1,3 +1,4 @@
+import { Rss } from "lucide-react";
 import { EmptyState, PageHeader, PriorityPill } from "@/components/ui";
 import type { WorkPriority } from "@/types";
 
@@ -20,6 +21,7 @@ export default function UpdatesPage() {
         ))}
       </section>
       <EmptyState
+        icon={Rss}
         title="ยังไม่มีข้อมูลอัปเดต"
         body="บันทึกอัปเดตแรกที่แต่ละทีมโพสต์จะแสดงที่นี่ การระบุงานเป็น CRITICAL จะต้องระบุเหตุผล, กำหนดเสร็จ, ผลกระทบหากล่าช้า และกิจกรรมที่ต่อเนื่องกัน — และต้องตั้งค่าโดยบุคคลเท่านั้น"
       />

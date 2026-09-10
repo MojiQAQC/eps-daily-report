@@ -1,20 +1,61 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  ClipboardList,
+  Database,
+  History,
+  LogIn,
+  LogOut,
+  type LucideIcon,
+  Menu,
+  Rss,
+  LayoutDashboard,
+  ShieldCheck,
+  UserCheck,
+  HardHat,
+  X,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
-const NAV = [
-  { href: "/", label: "ภาพรวม" },
-  { href: "/daily-report", label: "รายงานประจำวัน" },
-  { href: "/history", label: "ประวัติรายงาน" },
-  { href: "/updates", label: "ฟีดอัปเดตงาน" },
-  { href: "/admin", label: "ข้อมูลหลัก (Master)" },
-] as const;
+const NAV: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/", label: "ภาพรวม", icon: LayoutDashboard },
+  { href: "/daily-report", label: "รายงานประจำวัน", icon: ClipboardList },
+  { href: "/history", label: "ประวัติรายงาน", icon: History },
+  { href: "/updates", label: "ฟีดอัปเดตงาน", icon: Rss },
+  { href: "/admin", label: "ข้อมูลหลัก (Master)", icon: Database },
+];
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function getRoleBadge(role?: string) {
+  switch (role) {
+    case "contractor_user":
+      return {
+        label: "ผู้รับเหมา (Fast Steel)",
+        icon: HardHat,
+        className: "bg-amber-500/10 text-amber-700 border border-amber-500/20",
+      };
+    case "site_admin":
+      return {
+        label: "แอดมินประจำไซต์ (EPS)",
+        icon: UserCheck,
+        className: "bg-blue-500/10 text-blue-700 border border-blue-500/20",
+      };
+    case "head_office_admin":
+      return {
+        label: "แอดมินส่วนกลาง (EPS)",
+        icon: ShieldCheck,
+        className: "bg-purple-500/10 text-purple-700 border border-purple-500/20",
+      };
+    default:
+      return null;
+  }
 }
 
 export function AppShell({
@@ -25,12 +66,61 @@ export function AppShell({
   projectName?: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [sessionUser, setSessionUser] = useState<{
+    email?: string;
+    name?: string;
+    role?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setSessionUser({
+          email: data.user.email,
+          name: data.user.user_metadata?.full_name || data.user.email,
+          role: data.user.user_metadata?.role,
+        });
+      } else {
+        setSessionUser(null);
+      }
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session?.user) {
+          setSessionUser({
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name || session.user.email,
+            role: session.user.user_metadata?.role,
+          });
+        } else {
+          setSessionUser(null);
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setSessionUser(null);
+    router.push("/login");
+    router.refresh();
+  }
 
   // Auth surface stands alone — no app chrome on the login page.
   if (pathname === "/login") {
     return <div className="min-h-dvh bg-bg">{children}</div>;
   }
+
+  const roleBadge = getRoleBadge(sessionUser?.role);
 
   return (
     <div className="min-h-dvh bg-bg text-ink">
@@ -51,9 +141,7 @@ export function AppShell({
             aria-label={open ? "ปิดเมนูนำทาง" : "เปิดเมนูนำทาง"}
             onClick={() => setOpen((v) => !v)}
           >
-            <span aria-hidden className="text-xl leading-none">
-              {open ? "✕" : "☰"}
-            </span>
+            {open ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
           </button>
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
             <span
@@ -69,13 +157,47 @@ export function AppShell({
               <span className="block truncate text-xs text-muted">{projectName}</span>
             </span>
           </Link>
-          <div className="ml-auto">
-            <Link
-              href="/login"
-              className="inline-flex min-h-[44px] items-center rounded-md px-3 text-sm font-semibold text-muted hover:bg-surface hover:text-ink"
-            >
-              เข้าสู่ระบบ
-            </Link>
+
+          {/* User Session & Role Indicator */}
+          <div className="ml-auto flex items-center gap-2">
+            {sessionUser ? (
+              <div className="flex items-center gap-2">
+                {roleBadge && (
+                  <span
+                    className={`hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadge.className}`}
+                  >
+                    <roleBadge.icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    {roleBadge.label}
+                  </span>
+                )}
+                <span className="hidden md:inline-block text-xs text-muted truncate max-w-[140px]">
+                  {sessionUser.name}
+                </span>
+                <Link
+                  href="/login"
+                  title="สลับบทบาทนำเสนอ"
+                  className="inline-flex min-h-[36px] items-center gap-1 rounded-md px-2 text-xs font-semibold text-muted hover:bg-surface hover:text-ink transition-colors"
+                >
+                  สลับบทบาท
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  title="ออกจากระบบ"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted hover:bg-red-500/10 hover:text-red-600 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-primary hover:bg-surface hover:text-ink transition-colors"
+              >
+                <LogIn className="h-4 w-4" aria-hidden />
+                เข้าสู่ระบบ (Demo 3 ระดับ)
+              </Link>
+            )}
           </div>
         </div>
 
@@ -89,12 +211,13 @@ export function AppShell({
                     href={item.href}
                     aria-current={isActive(pathname, item.href) ? "page" : undefined}
                     onClick={() => setOpen(false)}
-                    className={`block rounded-md px-3 py-3 text-base font-semibold transition-colors duration-200 ${
+                    className={`flex items-center gap-2.5 rounded-md px-3 py-3 text-base font-semibold transition-colors duration-200 ${
                       isActive(pathname, item.href)
                         ? "bg-primary text-onprimary"
                         : "hover:bg-surface"
                     }`}
                   >
+                    <item.icon className="h-5 w-5 shrink-0" aria-hidden />
                     {item.label}
                   </Link>
                 </li>
@@ -115,10 +238,11 @@ export function AppShell({
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={`block rounded-md px-3 py-2.5 text-sm font-semibold transition-colors duration-200 ${
+                    className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm font-semibold transition-colors duration-200 ${
                       active ? "bg-primary text-onprimary" : "text-ink hover:bg-surface2"
                     }`}
                   >
+                    <item.icon className="h-4 w-4 shrink-0" aria-hidden />
                     {item.label}
                   </Link>
                 </li>

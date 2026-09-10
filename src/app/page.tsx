@@ -1,3 +1,4 @@
+import { ShieldCheck, Rss } from "lucide-react";
 import { ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { ProjectMapWeather } from "@/components/project-map-weather";
 
@@ -67,6 +68,7 @@ export default function Home() {
           งานที่ต้องติดตามเป็นพิเศษ
         </h2>
         <EmptyState
+          icon={ShieldCheck}
           title="ไม่มีงานวิกฤตที่แจ้งเตือน"
           body="รายการที่ระบุเป็น CRITICAL จะแสดงที่นี่พร้อมผู้รับผิดชอบและกำหนดเสร็จ การกำหนดระดับความสำคัญระบุโดยคนเท่านั้น — ระบบไม่ตั้งค่าอัตโนมัติ"
           action={<ButtonLink href="/updates" variant="secondary">เปิดดูฟีดอัปเดตงาน</ButtonLink>}
@@ -78,6 +80,7 @@ export default function Home() {
           อัปเดตล่าสุดจากหน้างาน
         </h2>
         <EmptyState
+          icon={Rss}
           title="ยังไม่มีข้อมูลอัปเดต"
           body="บันทึกความคืบหน้า งานที่เสร็จสิ้น และประเด็นติดขัดจากทุกทีมจะแสดงที่นี่"
         />

@@ -19,12 +19,14 @@ application features implemented yet.
       (contractor_user / site_admin / head_office_admin per DEMO_ROLES.md;
       demo-only, roles still come from DB via RLS — remove before production)
 - [x] Project Map & Live Weather widget (Thung Song site) + Thai localization
-- [x] Production build validated (10/10 routes passing) & preparing GitHub/Vercel deployment
+- [x] Production build validated (11/11 routes passing) & preparing GitHub/Vercel deployment
+- [x] Supabase Cloud connected & Master Data seeded (Disciplines, Contractors, STSBPP Project)
+- [x] 3-Tier Demo Personas provisioned in Supabase Auth & profiles verified (Contractor, Site Admin, Head Office Admin)
+- [x] AppShell session awareness & role indicator badges implemented
 
 ## Next (vertical slice order — do not skip ahead)
 
-1. **Auth slice**: Supabase Auth wiring, login page, session handling, RLS smoke test
-2. **Roles/permissions slice**: profiles + user_project_access, admin invite flow
+1. **Roles/permissions slice**: profiles + user_project_access, admin invite flow
 3. **Master data slice**: contractors/disciplines/projects CRUD (admin only)
 4. **Daily Report slice**: schema review -> data access -> validation -> form -> save -> retrieve
 5. **Report History slice**

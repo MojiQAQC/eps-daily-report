@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { forwardRef } from "react";
+import { Inbox, type LucideIcon } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import type { WorkPriority, WorkStatus } from "@/types";
 
@@ -205,16 +206,23 @@ export function EmptyState({
   title,
   body,
   action,
+  icon: Icon = Inbox,
 }: {
   title: string;
   body: string;
   action?: ReactNode;
+  icon?: LucideIcon;
 }) {
   return (
-    <div className="flex flex-col items-start gap-2 rounded-md border border-line bg-surface px-5 py-6">
-      <h2 className="text-base font-bold">{title}</h2>
-      <p className="text-sm text-muted">{body}</p>
-      {action && <div className="mt-2">{action}</div>}
+    <div className="flex flex-col items-start gap-3 rounded-md border border-line bg-surface px-5 py-6">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface2 text-muted">
+        <Icon className="h-5 w-5" aria-hidden />
+      </span>
+      <div className="flex flex-col gap-2">
+        <h2 className="text-base font-bold">{title}</h2>
+        <p className="text-sm text-muted">{body}</p>
+      </div>
+      {action && <div className="mt-1">{action}</div>}
     </div>
   );
 }

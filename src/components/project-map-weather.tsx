@@ -113,9 +113,13 @@ export function ProjectMapWeather() {
   const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
   const embedMapsUrl = `https://maps.google.com/maps?q=${lat},${lon}&hl=th&z=15&output=embed`;
 
-  const ConditionIcon = weather ? CONDITION_ICONS[weather.conditionIcon] : CloudFog;
-  const alert = ALERT_STYLES[weather?.alertLevel ?? "safe"];
-  const AlertIcon = alert.icon;
+  const ConditionIcon =
+    (weather && weather.conditionIcon && CONDITION_ICONS[weather.conditionIcon]) ||
+    CloudFog;
+  const alert =
+    (weather && weather.alertLevel && ALERT_STYLES[weather.alertLevel]) ||
+    ALERT_STYLES.safe;
+  const AlertIcon = alert.icon || ShieldCheck;
 
   return (
     <section aria-labelledby="project-map-heading" className="flex flex-col gap-4">

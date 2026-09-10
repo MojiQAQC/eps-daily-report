@@ -75,41 +75,51 @@ export function AppShell({
   } | null>(null);
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setSessionUser({
-          email: data.user.email,
-          name: data.user.user_metadata?.full_name || data.user.email,
-          role: data.user.user_metadata?.role,
-        });
-      } else {
-        setSessionUser(null);
-      }
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (session?.user) {
+    try {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }) => {
+        if (data?.user) {
           setSessionUser({
-            email: session.user.email,
-            name: session.user.user_metadata?.full_name || session.user.email,
-            role: session.user.user_metadata?.role,
+            email: data.user.email,
+            name: data.user.user_metadata?.full_name || data.user.email,
+            role: data.user.user_metadata?.role,
           });
         } else {
           setSessionUser(null);
         }
-      }
-    );
+      }).catch((err) => {
+        console.warn("Could not fetch user session:", err);
+      });
 
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          if (session?.user) {
+            setSessionUser({
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name || session.user.email,
+              role: session.user.user_metadata?.role,
+            });
+          } else {
+            setSessionUser(null);
+          }
+        }
+      );
+
+      return () => {
+        authListener?.subscription?.unsubscribe?.();
+      };
+    } catch (err) {
+      console.warn("Supabase auth init error:", err);
+    }
   }, []);
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn("Sign out error:", err);
+    }
     setSessionUser(null);
     router.push("/login");
     router.refresh();

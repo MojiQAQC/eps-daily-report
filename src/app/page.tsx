@@ -1,25 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  AlertTriangle,
   ArrowRight,
   Building2,
   CheckCircle2,
   ClipboardCheck,
-  ClipboardList,
   Clock,
-  ExternalLink,
   HardHat,
-  Lock,
-  Rss,
-  ShieldAlert,
   ShieldCheck,
   UserCheck,
-  Users,
 } from "lucide-react";
-import { Button, ButtonLink, EmptyState, PageHeader } from "@/components/ui";
+import { ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { ProjectMapWeather } from "@/components/project-map-weather";
 import { createClient } from "@/lib/supabase/client";
 
@@ -74,25 +66,25 @@ export default function Home() {
     <div className="flex flex-col gap-8">
       {/* Dynamic Role-Based Top Banner */}
       {userRole === "contractor_user" && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-5">
+        <div className="rounded-md border border-line bg-surface p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent text-onaccent">
                 <HardHat className="h-5 w-5" />
               </span>
               <div>
-                <span className="inline-block rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-800 mb-1">
+                <span className="inline-block rounded-full bg-accent px-2 py-0.5 text-xs font-bold text-onaccent mb-1">
                   บทบาท: ผู้รับเหมาหน้างาน
                 </span>
-                <h1 className="text-lg font-bold text-amber-950">
+                <h1 className="text-lg font-bold text-ink">
                   พื้นที่ปฏิบัติงาน: หจก. ฟาสต์สตีล จำกัด (Fast Steel)
                 </h1>
-                <p className="text-xs text-amber-800">
+                <p className="text-xs text-muted">
                   ผู้ล็อกอิน: {userName} ({userEmail}) · โครงการ STS-9.9 MW Biomass Power Plant
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ButtonLink href="/daily-report?type=morning_plan" variant="primary" size="sm">
                 กรอกแผนงานเช้า
               </ButtonLink>
@@ -105,25 +97,25 @@ export default function Home() {
       )}
 
       {userRole === "site_admin" && (
-        <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-5">
+        <div className="rounded-md border border-line bg-surface p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/20 text-blue-700">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary text-onprimary">
                 <UserCheck className="h-5 w-5" />
               </span>
               <div>
-                <span className="inline-block rounded-full bg-blue-500/20 px-2 py-0.5 text-xs font-bold text-blue-800 mb-1">
+                <span className="inline-block rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-onprimary mb-1">
                   บทบาท: แอดมินประจำไซต์งาน (EPS Resident Engineer)
                 </span>
-                <h1 className="text-lg font-bold text-blue-950">
+                <h1 className="text-lg font-bold text-ink">
                   แผงควบคุมตรวจงานไซต์ STS-9.9 MW Biomass Power Plant
                 </h1>
-                <p className="text-xs text-blue-800">
+                <p className="text-xs text-muted">
                   ผู้ตรวจรับรอง: {userName} ({userEmail}) · ควบคุม 11 ผู้รับเหมา
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ButtonLink href="/history" variant="primary" size="sm">
                 ตรวจรายงานทั้งหมด (Checked by EPS)
               </ButtonLink>
@@ -133,25 +125,25 @@ export default function Home() {
       )}
 
       {userRole === "head_office_admin" && (
-        <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-5">
+        <div className="rounded-md border border-line bg-surface p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-500/20 text-purple-700">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-ink text-bg">
                 <ShieldCheck className="h-5 w-5" />
               </span>
               <div>
-                <span className="inline-block rounded-full bg-purple-500/20 px-2 py-0.5 text-xs font-bold text-purple-800 mb-1">
+                <span className="inline-block rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-bg mb-1">
                   บทบาท: ผู้ดูแลระบบส่วนกลาง (Head Office Admin)
                 </span>
-                <h1 className="text-lg font-bold text-purple-950">
+                <h1 className="text-lg font-bold text-ink">
                   แผงบริหารและตรวจสอบระบบระดับองค์กร (Executive Governance)
                 </h1>
-                <p className="text-xs text-purple-800">
+                <p className="text-xs text-muted">
                   ผู้บริหาร: {userName} ({userEmail}) · ภาพรวมความโปร่งใสและข้อมูลหลัก
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ButtonLink href="/admin" variant="primary" size="sm">
                 เข้าสู่ศูนย์ควบคุมระบบ (Admin Console)
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -162,7 +154,7 @@ export default function Home() {
       )}
 
       {!loadingUser && !userRole && (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="rounded-md border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-sm font-bold text-ink">กำลังรับชมในโหมดผู้เยี่ยมชม (Guest Mode)</h2>
             <p className="text-xs text-muted mt-0.5">
@@ -197,10 +189,10 @@ export default function Home() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex flex-col gap-3 rounded-lg border border-amber-500/30 bg-surface p-5 shadow-sm">
+            <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-base">แผนงานช่วงเช้า (Morning Plan)</h3>
-                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-700">
+                <span className="rounded-full bg-warningbg px-2 py-0.5 text-xs font-bold text-warningink">
                   กำหนดส่งก่อน 09:00 น.
                 </span>
               </div>
@@ -215,10 +207,10 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-5 shadow-sm">
+            <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-base">ผลงานจริงสิ้นวัน (End-of-Day Actual)</h3>
-                <span className="rounded-full bg-surface2 px-2 py-0.5 text-xs font-bold text-muted">
+                <span className="rounded-full bg-surface2 border border-line px-2 py-0.5 text-xs font-bold text-muted">
                   ส่งเวลา 17:00 น.
                 </span>
               </div>
@@ -234,7 +226,7 @@ export default function Home() {
           </div>
 
           {/* Contractor Isolation History Snapshot */}
-          <div className="mt-2 rounded-lg border border-line bg-surface p-5">
+          <div className="mt-2 rounded-md border border-line bg-surface p-5">
             <div className="flex items-center justify-between border-b border-line pb-3 mb-3">
               <h3 className="font-bold text-sm flex items-center gap-2">
                 <ClipboardCheck className="h-4 w-4 text-primary" />
@@ -263,12 +255,12 @@ export default function Home() {
                 ตรวจสอบสถานะการส่งรายงานของทุกบริษัทก่อนเริ่มงานและสรุปผลประจำวัน
               </p>
             </div>
-            <span className="text-xs bg-blue-500/10 text-blue-700 px-2.5 py-1 rounded-full font-semibold border border-blue-500/20">
+            <span className="text-xs bg-surface2 text-ink px-2.5 py-1 rounded-full font-semibold border border-line">
               ส่งแผนเช้าแล้ว: 1 / 11 บริษัท
             </span>
           </div>
 
-          <div className="rounded-lg border border-line bg-surface overflow-hidden">
+          <div className="rounded-md border border-line bg-surface overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
@@ -285,19 +277,19 @@ export default function Home() {
                     <tr key={c.name} className="hover:bg-surface2/50 transition-colors">
                       <td className="px-5 py-3 font-semibold text-ink">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted font-mono">{i + 1}.</span>
+                          <span className="text-xs text-muted">{i + 1}.</span>
                           <span>{c.name}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3 text-xs text-muted">{c.pic}</td>
                       <td className="px-5 py-3">
                         {i === 0 ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-onsuccess bg-success px-2 py-0.5 rounded-full">
                             <CheckCircle2 className="h-3 w-3" />
                             พร้อมตรวจสอบ
                           </span>
                         ) : (
-                          <span className="text-xs text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                          <span className="text-xs text-muted bg-surface2 border border-line px-2 py-0.5 rounded-full">
                             รอส่ง
                           </span>
                         )}
@@ -342,10 +334,9 @@ export default function Home() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-purple-500/20 bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-purple-700 uppercase">ระบบตรวจสอบความปลอดภัย</span>
-                <Clock className="h-4 w-4 text-purple-700" />
+            <div className="rounded-md border border-line bg-surface p-5">
+              <div className="flex items-center justify-end">
+                <Clock className="h-4 w-4 text-primary" aria-hidden />
               </div>
               <h3 className="mt-2 text-base font-bold">ประวัติการเข้าใช้งาน (Login Audit)</h3>
               <p className="text-xs text-muted mt-1">
@@ -358,10 +349,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-line bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-primary uppercase">โครงสร้างข้อมูลหลัก</span>
-                <Building2 className="h-4 w-4 text-primary" />
+            <div className="rounded-md border border-line bg-surface p-5">
+              <div className="flex items-center justify-end">
+                <Building2 className="h-4 w-4 text-primary" aria-hidden />
               </div>
               <h3 className="mt-2 text-base font-bold">11 ผู้รับเหมา & 4 สาขาช่าง</h3>
               <p className="text-xs text-muted mt-1">
@@ -374,17 +364,16 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-line bg-surface p-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-700 uppercase">สถิติความปลอดภัย</span>
-                <ShieldCheck className="h-4 w-4 text-emerald-700" />
+            <div className="rounded-md border border-line bg-surface p-5">
+              <div className="flex items-center justify-end">
+                <ShieldCheck className="h-4 w-4 text-primary" aria-hidden />
               </div>
               <h3 className="mt-2 text-base font-bold">Zero Accident (0 อุบัติเหตุ)</h3>
               <p className="text-xs text-muted mt-1">
                 เกณฑ์ความปลอดภัยสภาพอากาศ ลม &lt; 14 mph ทำงานบนที่สูงได้ปลอดภัย
               </p>
               <div className="mt-4">
-                <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs text-onsuccess font-semibold bg-success px-2.5 py-1 rounded-full">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   ผ่านเกณฑ์ความปลอดภัย
                 </span>

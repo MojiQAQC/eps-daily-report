@@ -202,7 +202,7 @@ export function AppShell({
             ) : (
               <Link
                 href="/login"
-                className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-primary hover:bg-surface hover:text-ink transition-colors"
+                className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 text-xs font-semibold text-primary hover:bg-surface hover:text-ink transition-colors sm:text-sm"
               >
                 <LogIn className="h-4 w-4" aria-hidden />
                 เข้าสู่ระบบ (Demo 3 ระดับ)

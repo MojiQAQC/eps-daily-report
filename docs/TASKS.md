@@ -25,6 +25,8 @@ application features implemented yet.
 - [x] AppShell session awareness & role indicator badges implemented
 - [x] Role-specific dynamic dashboards: Contractor (Fast Steel workspace & isolated reporting), Site Admin (11-contractor supervision matrix), Head Office Admin (Executive governance)
 - [x] Admin Console (/admin): Live Login History & Audit Stream (last_sign_in_at), Master Data explorer (11 contractors & disciplines), and role-based access guard
+- [x] Overview polish: token-only palette, unified radius, themed selection, tabular numerals, mobile top-bar fix (desktop+mobile screenshots checked)
+- [x] Docker readiness: Next.js standalone output configured, production multi-stage Dockerfile, .dockerignore, and docker-compose.yml added
 
 ## Next (vertical slice order — do not skip ahead)
 

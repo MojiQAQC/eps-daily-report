@@ -214,7 +214,7 @@ export function ProjectMapWeather() {
 
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-baseline gap-1">
-                <span className="text-5xl font-extrabold tracking-tighter text-ink">
+                <span className="text-5xl font-extrabold tracking-tighter tabular-nums text-ink">
                   {loading ? "--" : weather?.temperature ?? 28}
                 </span>
                 <span className="text-2xl font-light text-muted">°C</span>
@@ -231,17 +231,17 @@ export function ProjectMapWeather() {
             <div className="mt-4 grid grid-cols-3 gap-2 rounded-md bg-surface2 p-2.5 text-center">
               <div>
                 <span className="block text-[11px] text-muted">ความชื้น</span>
-                <span className="text-sm font-bold text-ink">{weather?.humidity ?? 80}%</span>
+                <span className="text-sm font-bold tabular-nums text-ink">{weather?.humidity ?? 80}%</span>
               </div>
               <div className="border-x border-line">
                 <span className="block text-[11px] text-muted">ความเร็วลม</span>
-                <span className="text-sm font-bold text-ink">
+                <span className="text-sm font-bold tabular-nums text-ink">
                   {weather?.windSpeedMph ?? 7.5} <span className="text-[10px] font-normal text-muted">mph</span>
                 </span>
               </div>
               <div>
                 <span className="block text-[11px] text-muted">ปริมาณฝน</span>
-                <span className="text-sm font-bold text-ink">{weather?.precipitation ?? 0} mm</span>
+                <span className="text-sm font-bold tabular-nums text-ink">{weather?.precipitation ?? 0} mm</span>
               </div>
             </div>
           </div>

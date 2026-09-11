@@ -64,3 +64,75 @@ export interface UserProjectAccess {
   contractor_id?: string | null;
   discipline_id?: string | null;
 }
+
+// ----------------------------------------------------------
+// Daily Report (Export feature)
+// ----------------------------------------------------------
+
+export interface DailyReport {
+  id: string;
+  project_id: string;
+  contractor_id: string;
+  discipline_id?: string | null;
+  report_date: string;
+  report_type: ReportType;
+  status: ReportStatus;
+  report_number?: string | null;
+  time_start?: string | null;
+  time_finish?: string | null;
+  overtime_hours?: number | null;
+  cumulative_plan_pct?: number | null;
+  cumulative_actual_pct?: number | null;
+  weather_temperature?: number | null;
+  weather_condition?: string | null;
+  checked_by_user_id?: string | null;
+  checked_at?: string | null;
+  created_at: string;
+}
+
+export interface DailyReportWorkforce {
+  id: string;
+  daily_report_id: string;
+  role_name: string;
+  male_count: number;
+  female_count: number;
+}
+
+export interface DailyReportActivity {
+  id: string;
+  daily_report_id: string;
+  area?: string | null;
+  description: string;
+  planned_progress?: number | null;
+  actual_progress?: number | null;
+  status?: WorkStatus | null;
+  supervisor?: string | null;
+  remarks?: string | null;
+}
+
+export interface DailyReportSafety {
+  daily_report_id: string;
+  accident_status?: string | null;
+  accident_free_days?: number | null;
+  remarks?: string | null;
+}
+
+export interface DailyReportAttachment {
+  id: string;
+  daily_report_id: string;
+  kind: 'progress_photo' | 'safety_photo';
+  storage_path: string;
+  url?: string | null;
+}
+
+export interface ReportPayload {
+  report: DailyReport;
+  projectName: string;
+  projectCode: string | null;
+  contractorName: string;
+  contractorShortCode: string | null;
+  workforce: DailyReportWorkforce[];
+  activities: DailyReportActivity[];
+  safety: DailyReportSafety | null;
+  attachments: DailyReportAttachment[];
+}

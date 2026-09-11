@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Button,
   Field,
@@ -10,6 +10,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
 import type { ReportType, WorkStatus } from "@/types";
 
 const REPORT_TABS: { value: ReportType; label: string }[] = [
@@ -40,6 +41,51 @@ interface ActivityRow {
   supervisor: string;
 }
 
+interface PhotoFile {
+  file: File;
+  previewUrl: string;
+}
+
+function PhotoPicker({
+  label,
+  photos,
+  onAdd,
+  onRemove,
+}: {
+  label: string;
+  photos: PhotoFile[];
+  onAdd: (files: FileList | null) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="text-sm font-semibold">{label}</label>
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => onAdd(e.target.files)}
+        className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-2 file:text-sm file:font-semibold file:text-ink hover:file:bg-surface2"
+      />
+      {photos.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {photos.map((p, i) => (
+            <div key={p.previewUrl} className="flex flex-col gap-1 rounded-md border border-line bg-surface p-2">
+              <img src={p.previewUrl} alt="" className="h-24 w-full rounded object-cover" />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted">No.{i + 1}</span>
+                <Button type="button" variant="ghost" size="sm" onClick={() => onRemove(i)} aria-label={`ลบรูปที่ ${i + 1}`}>
+                  ลบ
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -60,8 +106,26 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     { area: "", description: "", progress: "", status: "", supervisor: "" },
   ]);
   const [safetyNotes, setSafetyNotes] = useState("");
+  const [progressPhotos, setProgressPhotos] = useState<PhotoFile[]>([]);
+  const [safetyPhotos, setSafetyPhotos] = useState<PhotoFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [reviewed, setReviewed] = useState(false);
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  function addPhotos(files: FileList | null, setter: React.Dispatch<React.SetStateAction<PhotoFile[]>>) {
+    if (!files) return;
+    const next = Array.from(files).map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+    setter((prev) => [...prev, ...next]);
+  }
+
+  function removePhoto(index: number, setter: React.Dispatch<React.SetStateAction<PhotoFile[]>>) {
+    setter((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   const totals = useMemo(() => {
     let male = 0;
@@ -114,6 +178,135 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
       document
         .getElementById("report-errors")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  async function onSubmit() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setSubmitError("กรุณาเข้าสู่ระบบก่อนส่งรายงาน");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("contractor_id, role")
+        .eq("id", user.id)
+        .single();
+      if (!profile || profile.role !== "contractor_user" || !profile.contractor_id) {
+        setSubmitError("เฉพาะผู้ใช้งานระดับผู้รับเหมาเท่านั้นที่ส่งรายงานได้ในขณะนี้");
+        return;
+      }
+
+      const { data: project } = await supabase
+        .from("projects")
+        .select("id")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .single();
+      if (!project) {
+        setSubmitError("ไม่พบข้อมูลโครงการ");
+        return;
+      }
+
+      const { data: report, error: reportError } = await supabase
+        .from("daily_reports")
+        .insert({
+          project_id: project.id,
+          contractor_id: profile.contractor_id,
+          report_date: reportDate,
+          report_type: reportType,
+          status: "submitted",
+          created_by: user.id,
+        })
+        .select("id")
+        .single();
+      if (reportError || !report) {
+        if (reportError?.code === "23505") {
+          setSubmitError("มีรายงานประเภทนี้สำหรับวันที่นี้อยู่แล้ว");
+        } else {
+          setSubmitError(`บันทึกรายงานไม่สำเร็จ: ${reportError?.message ?? "unknown error"}`);
+        }
+        return;
+      }
+
+      const workforceRows = workforce
+        .filter((r) => r.role.trim())
+        .map((r) => ({
+          daily_report_id: report.id,
+          role_name: r.role.trim(),
+          male_count: toCount(r.male) ?? 0,
+          female_count: toCount(r.female) ?? 0,
+        }));
+      if (workforceRows.length > 0) {
+        const { error } = await supabase.from("daily_report_workforce").insert(workforceRows);
+        if (error) {
+          setSubmitError(`บันทึกกำลังคนไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const activityRows = activities
+        .filter((a) => a.description.trim())
+        .map((a) => ({
+          daily_report_id: report.id,
+          area: a.area.trim() || null,
+          description: a.description.trim(),
+          planned_progress: reportType === "morning_plan" && a.progress.trim() ? Number(a.progress) : null,
+          actual_progress: reportType === "end_of_day_actual" && a.progress.trim() ? Number(a.progress) : null,
+          status: a.status || null,
+          supervisor: a.supervisor.trim() || null,
+        }));
+      if (activityRows.length > 0) {
+        const { error } = await supabase.from("daily_report_activities").insert(activityRows);
+        if (error) {
+          setSubmitError(`บันทึกกิจกรรมไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      if (safetyNotes.trim()) {
+        const { error } = await supabase
+          .from("daily_report_safety")
+          .insert({ daily_report_id: report.id, remarks: safetyNotes.trim() });
+        if (error) {
+          setSubmitError(`บันทึกข้อมูลความปลอดภัยไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const allPhotos: { file: File; kind: "progress_photo" | "safety_photo" }[] = [
+        ...progressPhotos.map((p) => ({ file: p.file, kind: "progress_photo" as const })),
+        ...safetyPhotos.map((p) => ({ file: p.file, kind: "safety_photo" as const })),
+      ];
+      for (const { file, kind } of allPhotos) {
+        const path = `${report.id}/${kind}/${crypto.randomUUID()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage.from("daily-report-photos").upload(path, file);
+        if (uploadError) {
+          setSubmitError(`อัปโหลดรูป ${file.name} ไม่สำเร็จ: ${uploadError.message}`);
+          return;
+        }
+        const { error: attachError } = await supabase.from("attachments").insert({
+          daily_report_id: report.id,
+          storage_path: path,
+          kind,
+          uploaded_by: user.id,
+        });
+        if (attachError) {
+          setSubmitError(`บันทึกข้อมูลรูปไม่สำเร็จ: ${attachError.message}`);
+          return;
+        }
+      }
+
+      router.push(`/daily-report/${report.id}`);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -360,22 +553,37 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         </Field>
       </section>
 
+      <section aria-labelledby="photos" className="flex flex-col gap-4">
+        <h2 id="photos" className="text-lg font-bold">
+          รูปภาพประกอบ (Photos)
+        </h2>
+        <PhotoPicker
+          label="รูปความคืบหน้า (Progress Photos)"
+          photos={progressPhotos}
+          onAdd={(files) => addPhotos(files, setProgressPhotos)}
+          onRemove={(i) => removePhoto(i, setProgressPhotos)}
+        />
+        <PhotoPicker
+          label="รูปความปลอดภัย (Safety Photos)"
+          photos={safetyPhotos}
+          onAdd={(files) => addPhotos(files, setSafetyPhotos)}
+          onRemove={(i) => removePhoto(i, setSafetyPhotos)}
+        />
+      </section>
+
       {reviewed ? (
-        <div
-          role="status"
-          className="flex flex-col gap-2 rounded-md border border-line bg-surface p-5"
-        >
+        <div role="status" className="flex flex-col gap-2 rounded-md border border-line bg-surface p-5">
           <h2 className="text-base font-bold">พร้อมส่งรายงาน</h2>
           <p className="text-sm text-muted">
-            {reportType === "morning_plan" ? "แผนงานช่วงเช้า" : "ผลงานจริงสิ้นวัน"} ·{" "}
-            วันที่ {reportDate} · กำลังคน {totals.crew} คน ·{" "}
-            {activities.filter((a) => a.description.trim()).length} กิจกรรม (การบันทึกลงฐานข้อมูลจะเชื่อมต่อใน Slice 4)
+            {reportType === "morning_plan" ? "แผนงานช่วงเช้า" : "ผลงานจริงสิ้นวัน"} · วันที่ {reportDate} ·
+            กำลังคน {totals.crew} คน · {activities.filter((a) => a.description.trim()).length} กิจกรรม
           </p>
+          {submitError && <FormError message={submitError} />}
           <div className="mt-1 flex flex-wrap gap-2">
-            <Button disabled title="ระบบบันทึกลงฐานข้อมูลจะเปิดใช้งานใน Slice 4">
-              บันทึกรายงาน (Slice 4)
+            <Button onClick={onSubmit} loading={submitting}>
+              บันทึกรายงาน
             </Button>
-            <Button variant="secondary" onClick={() => setReviewed(false)}>
+            <Button variant="secondary" onClick={() => setReviewed(false)} disabled={submitting}>
               แก้ไขเพิ่มเติม
             </Button>
           </div>

@@ -84,6 +84,7 @@ export function ReportView({ payload }: { payload: ReportPayload }) {
                 <th className="py-1">แผน %</th>
                 <th className="py-1">จริง %</th>
                 <th className="py-1">ผู้ควบคุมงาน</th>
+                <th className="py-1">JSA</th>
               </tr>
             </thead>
             <tbody>
@@ -94,6 +95,7 @@ export function ReportView({ payload }: { payload: ReportPayload }) {
                   <td className="py-1">{fmtPct(a.planned_progress)}</td>
                   <td className="py-1">{fmtPct(a.actual_progress)}</td>
                   <td className="py-1">{a.supervisor ?? "—"}</td>
+                  <td className="py-1">{a.jsa ? "✓" : "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -110,6 +112,101 @@ export function ReportView({ payload }: { payload: ReportPayload }) {
           </div>
         ) : (
           <p className="mt-2 text-sm text-muted">ไม่มีข้อมูล</p>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-base font-bold">ใบอนุญาตทำงาน (Work Permits)</h2>
+        {payload.permits.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">ไม่มีข้อมูล</p>
+        ) : (
+          <table className="mt-2 w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs text-muted">
+                <th className="py-1">ประเภทใบอนุญาต</th>
+                <th className="py-1">จำนวน</th>
+                <th className="py-1">คนทำงาน</th>
+                <th className="py-1">หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payload.permits.map((p) => (
+                <tr key={p.id} className="border-b border-line">
+                  <td className="py-1">{p.permit_type}</td>
+                  <td className="py-1">{p.count ?? "—"}</td>
+                  <td className="py-1">{p.workers ?? "—"}</td>
+                  <td className="py-1">{p.remarks ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-base font-bold">เครื่องจักร/อุปกรณ์ (Equipment)</h2>
+        {payload.machinery.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">ไม่มีข้อมูล</p>
+        ) : (
+          <table className="mt-2 w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs text-muted">
+                <th className="py-1">ประเภทเครื่องจักร</th>
+                <th className="py-1">จำนวน</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payload.machinery.map((m) => (
+                <tr key={m.id} className="border-b border-line">
+                  <td className="py-1">{m.machinery_type}</td>
+                  <td className="py-1">{m.quantity}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-base font-bold">หัวข้ออบรม Safety Talk (Safety Topics)</h2>
+        {payload.safetyTopics.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">ไม่มีข้อมูล</p>
+        ) : (
+          <div className="mt-2 flex flex-col gap-1 text-sm">
+            {payload.safetyTopics.map((t) => (
+              <p key={t.id}>• {t.topic}</p>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="text-base font-bold">วัสดุที่รับเข้า (Material Receive)</h2>
+        {payload.materialReceive.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">ไม่มีข้อมูล</p>
+        ) : (
+          <table className="mt-2 w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs text-muted">
+                <th className="py-1">วัสดุ</th>
+                <th className="py-1">จำนวน</th>
+                <th className="py-1">หน่วย</th>
+                <th className="py-1">วันที่รับ</th>
+                <th className="py-1">หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payload.materialReceive.map((m) => (
+                <tr key={m.id} className="border-b border-line">
+                  <td className="py-1">{m.material_name}</td>
+                  <td className="py-1">{m.quantity ?? "—"}</td>
+                  <td className="py-1">{m.unit ?? "—"}</td>
+                  <td className="py-1">{m.received_date ?? "—"}</td>
+                  <td className="py-1">{m.remarks ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
 

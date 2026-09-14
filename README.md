@@ -3,6 +3,9 @@
 Structured replacement for LINE-message + PDF daily site reporting. Pilot project:
 **STS-9.9 MW Biomass Power Plant**.
 
+* **Live Production URL:** [https://eps-daily-report.vercel.app](https://eps-daily-report.vercel.app)
+* **Canonical GitHub Repository:** [https://github.com/MojiQAQC/eps-daily-report](https://github.com/MojiQAQC/eps-daily-report) (Branch: `main`)
+
 Read `AGENTS.md` before making any change — it's short and applies to every contributor
 (human or AI).
 
@@ -10,7 +13,7 @@ Read `AGENTS.md` before making any change — it's short and applies to every co
 
 - Next.js 14 (App Router) + React + TypeScript + Tailwind CSS
 - Supabase (Postgres + Auth + Row Level Security) — prototype backend, not a hard lock-in
-- GitHub for source control
+- GitHub & Vercel (Auto-deploy on push to `main`)
 
 ## Setup
 

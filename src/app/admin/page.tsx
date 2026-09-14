@@ -204,7 +204,8 @@ export default function AdminPage() {
                 </span>
               </h3>
               <p className="mt-1 text-amber-800">
-                ในระบบจริง พื้นที่นี้จำกัดสิทธิ์เฉพาะ **แอดมินส่วนกลาง (Head Office Admin)** เพื่อความปลอดภัยของข้อมูล
+                ในระบบจริง พื้นที่นี้จำกัดสิทธิ์เฉพาะ{" "}
+                <strong className="font-semibold">แอดมินส่วนกลาง (Head Office Admin)</strong> เพื่อความปลอดภัยของข้อมูล
                 สำหรับการสาธิต คุณสามารถสลับบทบาทเป็น Supachai N. เพื่อควบคุมระบบเต็มรูปแบบได้ครับ
               </p>
               <div className="mt-3">

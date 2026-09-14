@@ -10,6 +10,10 @@ Token efficiency matters — this project may run under limited quota.
 - If a decision is genuinely open (see `docs/DECISIONS.md` / open questions in
   `docs/PRODUCT.md`), don't invent an answer — flag it and use the most reversible
   option, or ask.
+- **MANDATORY GITHUB SYNC:** The canonical repository is `https://github.com/MojiQAQC/eps-daily-report` (Branch: `main`).
+  The production site runs at `https://eps-daily-report.vercel.app` which auto-deploys from `origin/main`.
+  Before starting work: `git pull --rebase origin main`.
+  After completing work and passing `npm run build`: **Always commit and push to `origin main`** so other AI agents and the live Vercel deployment stay in sync!
 
 ## UX/UI & Frontend Skills Available
 Skills cloned from `qaqc-weekly-tracker` live in `.claude/skills/` and `.agents/skills/`:

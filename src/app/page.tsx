@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMyProfile } from "@/lib/use-profile";
 import {
   ArrowRight,
   Building2,
@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { ButtonLink, EmptyState, PageHeader } from "@/components/ui";
 import { ProjectMapWeather } from "@/components/project-map-weather";
-import { createClient } from "@/lib/supabase/client";
 
 function todayLabel() {
   return new Intl.DateTimeFormat("th-TH", {
@@ -40,27 +39,10 @@ const ALL_CONTRACTORS = [
 ];
 
 export default function Home() {
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth
-      .getUser()
-      .then(({ data }) => {
-        if (data?.user) {
-          setUserRole(data.user.user_metadata?.role || "contractor_user");
-          setUserName(data.user.user_metadata?.full_name || data.user.email);
-          setUserEmail(data.user.email || null);
-        } else {
-          setUserRole(null);
-        }
-        setLoadingUser(false);
-      })
-      .catch(() => setLoadingUser(false));
-  }, []);
+  // Role comes from the profiles table (RLS-enforced). user_metadata is never
+  // consulted here: it is client-writable and proves nothing.
+  const { role: userRole, loading: loadingUser, displayName: userName, email: userEmail } =
+    useMyProfile();
 
   return (
     <div className="flex flex-col gap-8">

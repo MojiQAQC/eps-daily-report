@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useMyProfile } from "@/lib/use-profile";
 
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "ภาพรวม", icon: LayoutDashboard },
@@ -72,8 +73,10 @@ export function AppShell({
   const [sessionUser, setSessionUser] = useState<{
     email?: string;
     name?: string;
-    role?: string;
   } | null>(null);
+  // Single source of truth for access decisions: the profiles table (RLS).
+  // Session metadata is display-only and never gates anything.
+  const { role: dbRole } = useMyProfile();
 
   useEffect(() => {
     try {
@@ -83,7 +86,6 @@ export function AppShell({
           setSessionUser({
             email: data.user.email,
             name: data.user.user_metadata?.full_name || data.user.email,
-            role: data.user.user_metadata?.role,
           });
         } else {
           setSessionUser(null);
@@ -98,7 +100,6 @@ export function AppShell({
             setSessionUser({
               email: session.user.email,
               name: session.user.user_metadata?.full_name || session.user.email,
-              role: session.user.user_metadata?.role,
             });
           } else {
             setSessionUser(null);
@@ -131,7 +132,9 @@ export function AppShell({
     return <div className="min-h-dvh bg-bg">{children}</div>;
   }
 
-  const roleBadge = getRoleBadge(sessionUser?.role);
+  const roleBadge = getRoleBadge(dbRole ?? undefined);
+  // Master-data console is head-office only; everyone else never sees the link.
+  const visibleNav = NAV.filter((item) => item.href !== "/admin" || dbRole === "head_office_admin");
 
   return (
     <div className="min-h-dvh bg-bg text-ink">
@@ -218,7 +221,7 @@ export function AppShell({
         {open && (
           <nav aria-label="เมนูหลัก" className="border-t border-line px-4 py-2 lg:hidden">
             <ul className="flex flex-col">
-              {NAV.map((item) => (
+              {visibleNav.map((item) => (
                 <li key={item.href}>
                   <Link
                     href={item.href}
@@ -244,7 +247,7 @@ export function AppShell({
         {/* Sidebar */}
         <nav aria-label="เมนูหลัก" className="sticky top-16 hidden w-60 shrink-0 py-6 lg:block">
           <ul className="flex flex-col gap-1 rounded-md bg-surface p-2">
-            {NAV.map((item) => {
+            {visibleNav.map((item) => {
               const active = isActive(pathname, item.href);
               return (
                 <li key={item.href}>

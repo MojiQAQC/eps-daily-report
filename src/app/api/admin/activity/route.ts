@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireHeadOfficeAdmin } from "@/lib/supabase/require-admin";
 
 export interface ActivityLogItem {
   id: string;
@@ -42,6 +43,10 @@ const RECENT_ACTIVITIES: ActivityLogItem[] = [
 ];
 
 export async function GET() {
+  // Login-audit stream is head-office only.
+  const gate = await requireHeadOfficeAdmin();
+  if (gate instanceof NextResponse) return gate;
+
   return NextResponse.json({ activities: RECENT_ACTIVITIES });
 }
 

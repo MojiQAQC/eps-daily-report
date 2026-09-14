@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { requireHeadOfficeAdmin } from "@/lib/supabase/require-admin";
 
 // Server-only admin client with elevated privileges
 function getAdminClient() {
@@ -14,6 +15,10 @@ function getAdminClient() {
 }
 
 export async function GET() {
+  // Caller must be head-office admin — this endpoint lists every user.
+  const gate = await requireHeadOfficeAdmin();
+  if (gate instanceof NextResponse) return gate;
+
   try {
     const admin = getAdminClient();
 
@@ -49,7 +54,7 @@ export async function GET() {
         email: u.email,
         fullName: profile?.full_name || u.user_metadata?.full_name || u.email,
         role: profile?.role || u.user_metadata?.role || "contractor_user",
-        contractorName: contractorName || (profile?.role === "contractor_user" ? "หจก. ฟาสต์สตีล จำกัด (Fast Steel)" : null),
+        contractorName: contractorName || null,
         lastSignInAt: u.last_sign_in_at,
         createdAt: u.created_at,
         emailConfirmedAt: u.email_confirmed_at,

@@ -23,6 +23,10 @@ application features implemented yet.
 - [x] Supabase Cloud connected & Master Data seeded (Disciplines, Contractors, STSBPP Project)
 - [x] 3-Tier Demo Personas provisioned in Supabase Auth & profiles verified (Contractor, Site Admin, Head Office Admin)
 - [x] AppShell session awareness & role indicator badges implemented
+- [x] Role-based access (DB-driven): migration 0002 self-read RLS, useMyProfile,
+      /admin deny + API 403 guards, nav filtering — role no longer from metadata
+      (verified live: guest 401s + deny, RLS self-read 3/3 match, contractor/
+      site-admin denied + 403s, head-office full access + 200s)
 - [x] Role-specific dynamic dashboards: Contractor (Fast Steel workspace & isolated reporting), Site Admin (11-contractor supervision matrix), Head Office Admin (Executive governance)
 - [x] Admin Console (/admin): Live Login History & Audit Stream (last_sign_in_at), Master Data explorer (11 contractors & disciplines), and role-based access guard
 - [x] Overview polish: token-only palette, unified radius, themed selection, tabular numerals, mobile top-bar fix (desktop+mobile screenshots checked)

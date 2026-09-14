@@ -25,10 +25,11 @@ daily_reports
                                    not a column, so roles are extensible)
   -> daily_report_permits        (permit_type, count, workers, remarks)
   -> daily_report_activities     (area, description, planned/actual progress,
-                                   status, supervisor, remarks — no activity_1/2/3)
+                                   status, supervisor, remarks, jsa — no activity_1/2/3)
   -> daily_report_machinery      (machinery_type, quantity)
   -> daily_report_safety         (accident status, accident-free days, remarks)
   -> daily_report_safety_topics  (safety talk topics, many per report)
+  -> daily_report_material_receive (material_name, quantity, unit, received_date, remarks)
   -> weather snapshot (fields on daily_reports or a linked weather_snapshots row,
                          with a retrieved_at timestamp — TBD when Weather API lands)
 ```
@@ -45,10 +46,16 @@ project_updates
   (progress_update | completed_work | in_progress | next_tomorrow | issue_concern | announcement)
   title, description, area, status, priority, owner, due_date
   created_by, created_at
-attachments   (photo storage_path/url, linked to a project_update or daily_report)
+attachments   (photo storage_path/url, linked to a project_update or daily_report;
+               kind: 'progress_photo' | 'safety_photo' | null for other attachment
+               types — added in migration 0003)
 ```
 
 No reactions/comments/chat/threads in Phase 1.
+
+Daily report photos live in the private `daily-report-photos` Storage bucket
+(path convention `{report_id}/{kind}/{uuid}-{filename}`, size/type limited by
+migration 0004); access is RLS-gated on `storage.objects`, not public.
 
 ## Critical Work / Priority
 

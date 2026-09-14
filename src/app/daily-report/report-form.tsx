@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import {
   Button,
   Field,
@@ -10,6 +11,7 @@ import {
   TextArea,
   TextInput,
 } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
 import type { ReportType, WorkStatus } from "@/types";
 
 const REPORT_TABS: { value: ReportType; label: string }[] = [
@@ -38,6 +40,327 @@ interface ActivityRow {
   progress: string;
   status: "" | WorkStatus;
   supervisor: string;
+  jsa: boolean;
+}
+
+interface PermitRow {
+  type: string;
+  count: string;
+  workers: string;
+  remarks: string;
+}
+
+interface MachineryRow {
+  type: string;
+  quantity: string;
+}
+
+interface MaterialRow {
+  material: string;
+  quantity: string;
+  unit: string;
+  receivedDate: string;
+  remarks: string;
+}
+
+const PERMIT_TYPES = [
+  "Hot Work",
+  "Work at Height",
+  "Lifting",
+  "LOTO",
+  "Confined Space",
+  "Energized Equipment Work",
+  "Other",
+];
+
+const MACHINERY_TYPES = [
+  "Welding Machine",
+  "Hand Tool Equipment",
+  "Crane",
+  "Hieb/Hiab",
+  "Trailer/Truck",
+  "Tractor/Backhoe/Grader",
+  "Compactor",
+  "Forklift",
+  "Excavator",
+  "Concrete Pump Truck",
+];
+
+interface PhotoFile {
+  file: File;
+  previewUrl: string;
+}
+
+function PhotoPicker({
+  label,
+  photos,
+  onAdd,
+  onRemove,
+}: {
+  label: string;
+  photos: PhotoFile[];
+  onAdd: (files: FileList | null) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="text-sm font-semibold">{label}</label>
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={(e) => onAdd(e.target.files)}
+        className="text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:py-2 file:text-sm file:font-semibold file:text-ink hover:file:bg-surface2"
+      />
+      {photos.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {photos.map((p, i) => (
+            <div key={p.previewUrl} className="flex flex-col gap-1 rounded-md border border-line bg-surface p-2">
+              <img src={p.previewUrl} alt="" className="h-24 w-full rounded object-cover" />
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted">No.{i + 1}</span>
+                <Button type="button" variant="ghost" size="sm" onClick={() => onRemove(i)} aria-label={`ลบรูปที่ ${i + 1}`}>
+                  ลบ
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PermitsTable({
+  rows,
+  onUpdate,
+}: {
+  rows: PermitRow[];
+  onUpdate: (index: number, patch: Partial<PermitRow>) => void;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-line">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+          <tr>
+            <th scope="col" className="px-3 py-2.5">ประเภทใบอนุญาต (Permit Type)</th>
+            <th scope="col" className="px-3 py-2.5 w-24">จำนวน</th>
+            <th scope="col" className="px-3 py-2.5 w-24">คนทำงาน</th>
+            <th scope="col" className="px-3 py-2.5">หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.map((row, i) => (
+            <tr key={row.type}>
+              <td className="px-3 py-2 font-medium">{row.type}</td>
+              <td className="px-3 py-2">
+                <TextInput
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={row.count}
+                  aria-label={`${row.type} จำนวน`}
+                  onChange={(e) => onUpdate(i, { count: e.target.value })}
+                />
+              </td>
+              <td className="px-3 py-2">
+                <TextInput
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={row.workers}
+                  aria-label={`${row.type} คนทำงาน`}
+                  onChange={(e) => onUpdate(i, { workers: e.target.value })}
+                />
+              </td>
+              <td className="px-3 py-2">
+                <TextInput
+                  placeholder="หมายเหตุ"
+                  value={row.remarks}
+                  aria-label={`${row.type} หมายเหตุ`}
+                  onChange={(e) => onUpdate(i, { remarks: e.target.value })}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function EquipmentTable({
+  rows,
+  onUpdate,
+}: {
+  rows: MachineryRow[];
+  onUpdate: (index: number, patch: Partial<MachineryRow>) => void;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-line">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+          <tr>
+            <th scope="col" className="px-3 py-2.5">ประเภทเครื่องจักร (Machinery Type)</th>
+            <th scope="col" className="px-3 py-2.5 w-32">จำนวน (Quantity)</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.map((row, i) => (
+            <tr key={row.type}>
+              <td className="px-3 py-2 font-medium">{row.type}</td>
+              <td className="px-3 py-2">
+                <TextInput
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={row.quantity}
+                  aria-label={`${row.type} จำนวน`}
+                  onChange={(e) => onUpdate(i, { quantity: e.target.value })}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SafetyTopicsList({
+  topics,
+  onUpdate,
+  onAdd,
+  onRemove,
+}: {
+  topics: string[];
+  onUpdate: (index: number, value: string) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {topics.map((topic, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <TextInput
+            placeholder="เช่น ตรวจสอบสายรัดนิรภัยสำหรับงานที่สูง"
+            value={topic}
+            aria-label={`หัวข้อ Safety Talk ที่ ${i + 1}`}
+            onChange={(e) => onUpdate(i, e.target.value)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemove(i)}
+            disabled={topics.length === 1}
+            aria-label={`ลบหัวข้อที่ ${i + 1}`}
+            title="ลบแถว"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
+        </div>
+      ))}
+      <div>
+        <Button variant="secondary" onClick={onAdd}>
+          + เพิ่มหัวข้อ
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function MaterialReceiveTable({
+  rows,
+  onUpdate,
+  onAdd,
+  onRemove,
+}: {
+  rows: MaterialRow[];
+  onUpdate: (index: number, patch: Partial<MaterialRow>) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="overflow-x-auto rounded-md border border-line">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+            <tr>
+              <th scope="col" className="px-3 py-2.5">วัสดุ (Material)</th>
+              <th scope="col" className="px-3 py-2.5 w-24">จำนวน</th>
+              <th scope="col" className="px-3 py-2.5 w-24">หน่วย</th>
+              <th scope="col" className="px-3 py-2.5 w-36">วันที่รับ</th>
+              <th scope="col" className="px-3 py-2.5">หมายเหตุ</th>
+              <th scope="col" className="px-3 py-2.5 w-12">
+                <span className="sr-only">ลบแถว</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {rows.map((row, i) => (
+              <tr key={i}>
+                <td className="px-3 py-2">
+                  <TextInput
+                    placeholder="เช่น เหล็กเส้น"
+                    value={row.material}
+                    aria-label={`วัสดุแถวที่ ${i + 1} ชื่อวัสดุ`}
+                    onChange={(e) => onUpdate(i, { material: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={row.quantity}
+                    aria-label={`วัสดุแถวที่ ${i + 1} จำนวน`}
+                    onChange={(e) => onUpdate(i, { quantity: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    placeholder="เช่น kg, ตัน"
+                    value={row.unit}
+                    aria-label={`วัสดุแถวที่ ${i + 1} หน่วย`}
+                    onChange={(e) => onUpdate(i, { unit: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    type="date"
+                    value={row.receivedDate}
+                    aria-label={`วัสดุแถวที่ ${i + 1} วันที่รับ`}
+                    onChange={(e) => onUpdate(i, { receivedDate: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    placeholder="หมายเหตุ"
+                    value={row.remarks}
+                    aria-label={`วัสดุแถวที่ ${i + 1} หมายเหตุ`}
+                    onChange={(e) => onUpdate(i, { remarks: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onRemove(i)}
+                    disabled={rows.length === 1}
+                    aria-label={`ลบวัสดุแถวที่ ${i + 1}`}
+                    title="ลบแถว"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <Button variant="secondary" onClick={onAdd}>
+          + เพิ่มวัสดุ
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function todayISO() {
@@ -50,6 +373,24 @@ function toCount(value: string): number | null {
   return Number.isInteger(n) && n >= 0 ? n : NaN;
 }
 
+function toDecimal(value: string): number | null {
+  if (value.trim() === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+
+function toPercent(value: string): number | null {
+  if (value.trim() === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : NaN;
+}
+
+function numOrNull(value: string): number | null {
+  if (!value.trim()) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function ReportForm({ initialType }: { initialType: ReportType }) {
   const [reportType, setReportType] = useState<ReportType>(initialType);
   const [reportDate, setReportDate] = useState(todayISO());
@@ -57,11 +398,41 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     { role: "", male: "", female: "" },
   ]);
   const [activities, setActivities] = useState<ActivityRow[]>([
-    { area: "", description: "", progress: "", status: "", supervisor: "" },
+    { area: "", description: "", progress: "", status: "", supervisor: "", jsa: false },
   ]);
   const [safetyNotes, setSafetyNotes] = useState("");
+  const [permits, setPermits] = useState<PermitRow[]>(
+    PERMIT_TYPES.map((type) => ({ type, count: "", workers: "", remarks: "" })),
+  );
+  const [machinery, setMachinery] = useState<MachineryRow[]>(
+    MACHINERY_TYPES.map((type) => ({ type, quantity: "" })),
+  );
+  const [safetyTopics, setSafetyTopics] = useState<string[]>([""]);
+  const [materialReceive, setMaterialReceive] = useState<MaterialRow[]>([
+    { material: "", quantity: "", unit: "", receivedDate: "", remarks: "" },
+  ]);
+  const [cumulativePlanPct, setCumulativePlanPct] = useState("");
+  const [cumulativeActualPct, setCumulativeActualPct] = useState("");
+  const [progressPhotos, setProgressPhotos] = useState<PhotoFile[]>([]);
+  const [safetyPhotos, setSafetyPhotos] = useState<PhotoFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [reviewed, setReviewed] = useState(false);
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  function addPhotos(files: FileList | null, setter: React.Dispatch<React.SetStateAction<PhotoFile[]>>) {
+    if (!files) return;
+    const next = Array.from(files).map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+    setter((prev) => [...prev, ...next]);
+  }
+
+  function removePhoto(index: number, setter: React.Dispatch<React.SetStateAction<PhotoFile[]>>) {
+    setter((prev) => {
+      URL.revokeObjectURL(prev[index].previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
 
   const totals = useMemo(() => {
     let male = 0;
@@ -75,6 +446,15 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     return { male, female, crew: male + female };
   }, [workforce]);
 
+  const sectionCounts = useMemo(
+    () => ({
+      permits: permits.filter((p) => p.count.trim() || p.workers.trim() || p.remarks.trim()).length,
+      machinery: machinery.filter((m) => m.quantity.trim()).length,
+      material: materialReceive.filter((m) => m.material.trim()).length,
+    }),
+    [permits, machinery, materialReceive],
+  );
+
   function updateWorkforce(index: number, patch: Partial<WorkforceRow>) {
     setWorkforce((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
@@ -83,6 +463,22 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     setActivities((rows) =>
       rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
     );
+  }
+
+  function updatePermit(index: number, patch: Partial<PermitRow>) {
+    setPermits((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+
+  function updateMachinery(index: number, patch: Partial<MachineryRow>) {
+    setMachinery((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+
+  function updateSafetyTopic(index: number, value: string) {
+    setSafetyTopics((rows) => rows.map((r, i) => (i === index ? value : r)));
+  }
+
+  function updateMaterial(index: number, patch: Partial<MaterialRow>) {
+    setMaterialReceive((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
 
   function validate(): string[] {
@@ -103,6 +499,22 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
       if (a.progress.trim() !== "" && Number.isNaN(Number(a.progress)))
         found.push(`กิจกรรมที่ ${i + 1}: ความก้าวหน้าต้องเป็นตัวเลข`);
     });
+    if (Number.isNaN(toPercent(cumulativePlanPct)))
+      found.push("ความก้าวหน้าสะสม - แผน (%): ต้องเป็นตัวเลข 0–100");
+    if (Number.isNaN(toPercent(cumulativeActualPct)))
+      found.push("ความก้าวหน้าสะสม - จริง (%): ต้องเป็นตัวเลข 0–100");
+    permits.forEach((p) => {
+      if (Number.isNaN(toCount(p.count)) || Number.isNaN(toCount(p.workers)))
+        found.push(`ใบอนุญาตทำงาน ${p.type}: จำนวนและคนทำงานต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 0 ขึ้นไป`);
+    });
+    machinery.forEach((m) => {
+      if (Number.isNaN(toCount(m.quantity)))
+        found.push(`เครื่องจักร/อุปกรณ์ ${m.type}: จำนวนต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 0 ขึ้นไป`);
+    });
+    materialReceive.forEach((m, i) => {
+      if (Number.isNaN(toDecimal(m.quantity)))
+        found.push(`วัสดุแถวที่ ${i + 1}: จำนวนต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป`);
+    });
     return found;
   }
 
@@ -114,6 +526,199 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
       document
         .getElementById("report-errors")
         ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  async function onSubmit() {
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setSubmitError("กรุณาเข้าสู่ระบบก่อนส่งรายงาน");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("contractor_id, role")
+        .eq("id", user.id)
+        .single();
+      if (!profile || profile.role !== "contractor_user" || !profile.contractor_id) {
+        setSubmitError("เฉพาะผู้ใช้งานระดับผู้รับเหมาเท่านั้นที่ส่งรายงานได้ในขณะนี้");
+        return;
+      }
+
+      const { data: project } = await supabase
+        .from("projects")
+        .select("id")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .single();
+      if (!project) {
+        setSubmitError("ไม่พบข้อมูลโครงการ");
+        return;
+      }
+
+      const { data: report, error: reportError } = await supabase
+        .from("daily_reports")
+        .insert({
+          project_id: project.id,
+          contractor_id: profile.contractor_id,
+          report_date: reportDate,
+          report_type: reportType,
+          status: "submitted",
+          created_by: user.id,
+          cumulative_plan_pct: numOrNull(cumulativePlanPct),
+          cumulative_actual_pct: numOrNull(cumulativeActualPct),
+        })
+        .select("id")
+        .single();
+      if (reportError || !report) {
+        if (reportError?.code === "23505") {
+          setSubmitError("มีรายงานประเภทนี้สำหรับวันที่นี้อยู่แล้ว");
+        } else {
+          setSubmitError(`บันทึกรายงานไม่สำเร็จ: ${reportError?.message ?? "unknown error"}`);
+        }
+        return;
+      }
+
+      const workforceRows = workforce
+        .filter((r) => r.role.trim())
+        .map((r) => ({
+          daily_report_id: report.id,
+          role_name: r.role.trim(),
+          male_count: toCount(r.male) ?? 0,
+          female_count: toCount(r.female) ?? 0,
+        }));
+      if (workforceRows.length > 0) {
+        const { error } = await supabase.from("daily_report_workforce").insert(workforceRows);
+        if (error) {
+          setSubmitError(`บันทึกกำลังคนไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const activityRows = activities
+        .filter((a) => a.description.trim())
+        .map((a) => ({
+          daily_report_id: report.id,
+          area: a.area.trim() || null,
+          description: a.description.trim(),
+          planned_progress: reportType === "morning_plan" && a.progress.trim() ? Number(a.progress) : null,
+          actual_progress: reportType === "end_of_day_actual" && a.progress.trim() ? Number(a.progress) : null,
+          status: a.status || null,
+          supervisor: a.supervisor.trim() || null,
+          jsa: a.jsa,
+        }));
+      if (activityRows.length > 0) {
+        const { error } = await supabase.from("daily_report_activities").insert(activityRows);
+        if (error) {
+          setSubmitError(`บันทึกกิจกรรมไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      if (safetyNotes.trim()) {
+        const { error } = await supabase
+          .from("daily_report_safety")
+          .insert({ daily_report_id: report.id, remarks: safetyNotes.trim() });
+        if (error) {
+          setSubmitError(`บันทึกข้อมูลความปลอดภัยไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const permitRows = permits
+        .filter((p) => p.count.trim() || p.workers.trim() || p.remarks.trim())
+        .map((p) => ({
+          daily_report_id: report.id,
+          permit_type: p.type,
+          count: numOrNull(p.count),
+          workers: numOrNull(p.workers),
+          remarks: p.remarks.trim() || null,
+        }));
+      if (permitRows.length > 0) {
+        const { error } = await supabase.from("daily_report_permits").insert(permitRows);
+        if (error) {
+          setSubmitError(`บันทึกใบอนุญาตทำงานไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const machineryRows = machinery
+        .filter((m) => m.quantity.trim())
+        .map((m) => ({
+          daily_report_id: report.id,
+          machinery_type: m.type,
+          quantity: numOrNull(m.quantity),
+        }));
+      if (machineryRows.length > 0) {
+        const { error } = await supabase.from("daily_report_machinery").insert(machineryRows);
+        if (error) {
+          setSubmitError(`บันทึกข้อมูลเครื่องจักรไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const safetyTopicRows = safetyTopics
+        .filter((t) => t.trim())
+        .map((t) => ({ daily_report_id: report.id, topic: t.trim() }));
+      if (safetyTopicRows.length > 0) {
+        const { error } = await supabase.from("daily_report_safety_topics").insert(safetyTopicRows);
+        if (error) {
+          setSubmitError(`บันทึกหัวข้อ Safety Talk ไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const materialRows = materialReceive
+        .filter((m) => m.material.trim())
+        .map((m) => ({
+          daily_report_id: report.id,
+          material_name: m.material.trim(),
+          quantity: numOrNull(m.quantity),
+          unit: m.unit.trim() || null,
+          received_date: m.receivedDate || null,
+          remarks: m.remarks.trim() || null,
+        }));
+      if (materialRows.length > 0) {
+        const { error } = await supabase.from("daily_report_material_receive").insert(materialRows);
+        if (error) {
+          setSubmitError(`บันทึกข้อมูลวัสดุที่รับเข้าไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const allPhotos: { file: File; kind: "progress_photo" | "safety_photo" }[] = [
+        ...progressPhotos.map((p) => ({ file: p.file, kind: "progress_photo" as const })),
+        ...safetyPhotos.map((p) => ({ file: p.file, kind: "safety_photo" as const })),
+      ];
+      for (const { file, kind } of allPhotos) {
+        const path = `${report.id}/${kind}/${crypto.randomUUID()}-${file.name}`;
+        const { error: uploadError } = await supabase.storage.from("daily-report-photos").upload(path, file);
+        if (uploadError) {
+          setSubmitError(`อัปโหลดรูป ${file.name} ไม่สำเร็จ: ${uploadError.message}`);
+          return;
+        }
+        const { error: attachError } = await supabase.from("attachments").insert({
+          daily_report_id: report.id,
+          storage_path: path,
+          kind,
+          uploaded_by: user.id,
+        });
+        if (attachError) {
+          setSubmitError(`บันทึกข้อมูลรูปไม่สำเร็จ: ${attachError.message}`);
+          return;
+        }
+      }
+
+      router.push(`/daily-report/${report.id}`);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -176,6 +781,24 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
               ))}
             </Select>
           </Field>
+          <Field label="ความก้าวหน้าสะสม - แผน (%)" htmlFor="cumulative-plan">
+            <TextInput
+              id="cumulative-plan"
+              inputMode="decimal"
+              placeholder="0–100"
+              value={cumulativePlanPct}
+              onChange={(e) => setCumulativePlanPct(e.target.value)}
+            />
+          </Field>
+          <Field label="ความก้าวหน้าสะสม - จริง (%)" htmlFor="cumulative-actual">
+            <TextInput
+              id="cumulative-actual"
+              inputMode="decimal"
+              placeholder="0–100"
+              value={cumulativeActualPct}
+              onChange={(e) => setCumulativeActualPct(e.target.value)}
+            />
+          </Field>
         </div>
       </section>
 
@@ -189,55 +812,66 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
             คน · หญิง {totals.female} คน)
           </p>
         </div>
-        {workforce.map((row, i) => (
-          <fieldset
-            key={i}
-            className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-[1fr_5rem_5rem_auto]"
-          >
-            <legend className="sr-only">กำลังคนแถวที่ {i + 1}</legend>
-            <Field label={i === 0 ? "ตำแหน่ง/หน้าที่ (Role)" : ""} htmlFor={`wf-role-${i}`}>
-              <TextInput
-                id={`wf-role-${i}`}
-                placeholder="เช่น ช่างเชื่อม, กรรมกร, โฟร์แมน"
-                value={row.role}
-                aria-label={`กำลังคนแถวที่ ${i + 1} ตำแหน่ง`}
-                onChange={(e) => updateWorkforce(i, { role: e.target.value })}
-              />
-            </Field>
-            <Field label={i === 0 ? "ชาย (คน)" : ""} htmlFor={`wf-m-${i}`}>
-              <TextInput
-                id={`wf-m-${i}`}
-                inputMode="numeric"
-                placeholder="0"
-                value={row.male}
-                aria-label={`กำลังคนแถวที่ ${i + 1} ชาย`}
-                onChange={(e) => updateWorkforce(i, { male: e.target.value })}
-              />
-            </Field>
-            <Field label={i === 0 ? "หญิง (คน)" : ""} htmlFor={`wf-f-${i}`}>
-              <TextInput
-                id={`wf-f-${i}`}
-                inputMode="numeric"
-                placeholder="0"
-                value={row.female}
-                aria-label={`กำลังคนแถวที่ ${i + 1} หญิง`}
-                onChange={(e) => updateWorkforce(i, { female: e.target.value })}
-              />
-            </Field>
-            <div className="flex items-end">
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setWorkforce((rows) => rows.filter((_, j) => j !== i))
-                }
-                disabled={workforce.length === 1}
-                aria-label={`ลบกำลังคนแถวที่ ${i + 1}`}
-              >
-                ลบ
-              </Button>
-            </div>
-          </fieldset>
-        ))}
+        <div className="overflow-x-auto rounded-md border border-line">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+              <tr>
+                <th scope="col" className="px-3 py-2.5">ตำแหน่ง/หน้าที่ (Role)</th>
+                <th scope="col" className="px-3 py-2.5 w-24">ชาย (คน)</th>
+                <th scope="col" className="px-3 py-2.5 w-24">หญิง (คน)</th>
+                <th scope="col" className="px-3 py-2.5 w-12">
+                  <span className="sr-only">ลบแถว</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {workforce.map((row, i) => (
+                <tr key={i}>
+                  <td className="px-3 py-2">
+                    <TextInput
+                      placeholder="เช่น ช่างเชื่อม, กรรมกร, โฟร์แมน"
+                      value={row.role}
+                      aria-label={`กำลังคนแถวที่ ${i + 1} ตำแหน่ง`}
+                      onChange={(e) => updateWorkforce(i, { role: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <TextInput
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={row.male}
+                      aria-label={`กำลังคนแถวที่ ${i + 1} ชาย`}
+                      onChange={(e) => updateWorkforce(i, { male: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <TextInput
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={row.female}
+                      aria-label={`กำลังคนแถวที่ ${i + 1} หญิง`}
+                      onChange={(e) => updateWorkforce(i, { female: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setWorkforce((rows) => rows.filter((_, j) => j !== i))
+                      }
+                      disabled={workforce.length === 1}
+                      aria-label={`ลบกำลังคนแถวที่ ${i + 1}`}
+                      title="ลบแถว"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div>
           <Button
             variant="secondary"
@@ -254,86 +888,115 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         <h2 id="activities" className="text-lg font-bold">
           กิจกรรมงาน (Activities)
         </h2>
-        {activities.map((row, i) => (
-          <fieldset
-            key={i}
-            className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-2"
-          >
-            <legend className="sr-only">กิจกรรมที่ {i + 1}</legend>
-            <Field label="พื้นที่ทำงาน (Area)" htmlFor={`act-area-${i}`}>
-              <TextInput
-                id={`act-area-${i}`}
-                placeholder="เช่น อาคาร Boiler ชั้น 2, Moving Floor MF01"
-                value={row.area}
-                onChange={(e) => updateActivity(i, { area: e.target.value })}
-              />
-            </Field>
-            <Field label="ผู้ควบคุมงาน (Supervisor)" htmlFor={`act-sup-${i}`}>
-              <TextInput
-                id={`act-sup-${i}`}
-                placeholder="ชื่อผู้ควบคุมงาน"
-                value={row.supervisor}
-                onChange={(e) => updateActivity(i, { supervisor: e.target.value })}
-              />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label="รายละเอียดงาน (Description)" htmlFor={`act-desc-${i}`}>
-                <TextArea
-                  id={`act-desc-${i}`}
-                  placeholder="ระบุงานที่ทำหรือที่วางแผนไว้ ให้ชัดเจนพอที่ทีมงานรอบถัดไปจะตรวจสอบได้"
-                  value={row.description}
-                  onChange={(e) => updateActivity(i, { description: e.target.value })}
-                />
-              </Field>
-            </div>
-            <Field
-              label={reportType === "morning_plan" ? "ความก้าวหน้าที่วางแผนไว้ (%)" : "ความก้าวหน้าที่ทำได้จริง (%)"}
-              htmlFor={`act-prog-${i}`}
-            >
-              <TextInput
-                id={`act-prog-${i}`}
-                inputMode="decimal"
-                placeholder="0–100"
-                value={row.progress}
-                onChange={(e) => updateActivity(i, { progress: e.target.value })}
-              />
-            </Field>
-            <Field label="สถานะ (Status)" htmlFor={`act-status-${i}`}>
-              <Select
-                id={`act-status-${i}`}
-                value={row.status}
-                onChange={(e) =>
-                  updateActivity(i, { status: e.target.value as "" | WorkStatus })
-                }
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <div className="sm:col-span-2">
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setActivities((rows) => rows.filter((_, j) => j !== i))
-                }
-                disabled={activities.length === 1}
-                aria-label={`ลบกิจกรรมที่ ${i + 1}`}
-              >
-                ลบกิจกรรม
-              </Button>
-            </div>
-          </fieldset>
-        ))}
+        <div className="overflow-x-auto rounded-md border border-line contain-layout">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+              <tr>
+                <th scope="col" className="px-3 py-2.5">พื้นที่ทำงาน (Area)</th>
+                <th scope="col" className="px-3 py-2.5 min-w-[16rem]">รายละเอียดงาน (Description)</th>
+                <th scope="col" className="px-3 py-2.5">ผู้ควบคุมงาน (Supervisor)</th>
+                <th scope="col" className="px-3 py-2.5 w-28">
+                  {reportType === "morning_plan" ? "แผน (%)" : "จริง (%)"}
+                </th>
+                <th scope="col" className="px-3 py-2.5 w-40">สถานะ (Status)</th>
+                <th scope="col" className="px-3 py-2.5 w-16">JSA</th>
+                <th scope="col" className="px-3 py-2.5 w-12">
+                  <span className="sr-only">ลบแถว</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {activities.map((row, i) => (
+                <tr key={i}>
+                  <td className="px-3 py-2 align-top">
+                    <TextInput
+                      placeholder="เช่น อาคาร Boiler ชั้น 2, Moving Floor MF01"
+                      value={row.area}
+                      aria-label={`กิจกรรมที่ ${i + 1} พื้นที่ทำงาน`}
+                      onChange={(e) => updateActivity(i, { area: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <TextArea
+                      rows={2}
+                      style={{ minHeight: "3.5rem" }}
+                      placeholder="ระบุงานที่ทำหรือที่วางแผนไว้ ให้ชัดเจนพอที่ทีมงานรอบถัดไปจะตรวจสอบได้"
+                      value={row.description}
+                      aria-label={`กิจกรรมที่ ${i + 1} รายละเอียดงาน`}
+                      onChange={(e) => updateActivity(i, { description: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <TextInput
+                      placeholder="ชื่อผู้ควบคุมงาน"
+                      value={row.supervisor}
+                      aria-label={`กิจกรรมที่ ${i + 1} ผู้ควบคุมงาน`}
+                      onChange={(e) => updateActivity(i, { supervisor: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <TextInput
+                      inputMode="decimal"
+                      placeholder="0–100"
+                      value={row.progress}
+                      aria-label={`กิจกรรมที่ ${i + 1} ${
+                        reportType === "morning_plan"
+                          ? "ความก้าวหน้าที่วางแผนไว้"
+                          : "ความก้าวหน้าที่ทำได้จริง"
+                      }`}
+                      onChange={(e) => updateActivity(i, { progress: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <Select
+                      aria-label={`กิจกรรมที่ ${i + 1} สถานะ`}
+                      value={row.status}
+                      onChange={(e) =>
+                        updateActivity(i, { status: e.target.value as "" | WorkStatus })
+                      }
+                    >
+                      {STATUS_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </td>
+                  <td className="px-3 py-2 align-top text-center">
+                    <input
+                      type="checkbox"
+                      checked={row.jsa}
+                      onChange={(e) => updateActivity(i, { jsa: e.target.checked })}
+                      aria-label={`กิจกรรมที่ ${i + 1} JSA`}
+                      className="h-6 w-6 rounded border-line accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setActivities((rows) => rows.filter((_, j) => j !== i))
+                      }
+                      disabled={activities.length === 1}
+                      aria-label={`ลบกิจกรรมที่ ${i + 1}`}
+                      title="ลบแถว"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div>
           <Button
             variant="secondary"
             onClick={() =>
               setActivities((rows) => [
                 ...rows,
-                { area: "", description: "", progress: "", status: "", supervisor: "" },
+                { area: "", description: "", progress: "", status: "", supervisor: "", jsa: false },
               ])
             }
           >
@@ -349,33 +1012,93 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         <Field
           label="บันทึกความปลอดภัย (Safety Notes)"
           htmlFor="safety-notes"
-          hint="สถิติอุบัติเหตุ, จำนวนวันไร้อุบัติเหตุ, และหัวข้ออบรม Safety Talk วันนี้"
+          hint="สถิติอุบัติเหตุ และจำนวนวันไร้อุบัติเหตุ"
         >
           <TextArea
             id="safety-notes"
-            placeholder="เช่น ไม่มีอุบัติเหตุ จำนวนวันไร้อุบัติเหตุสะสม: 431 วัน หัวข้ออบรม: ตรวจสอบสายรัดนิรภัยสำหรับงานที่สูง"
+            placeholder="เช่น ไม่มีอุบัติเหตุ จำนวนวันไร้อุบัติเหตุสะสม: 431 วัน"
             value={safetyNotes}
             onChange={(e) => setSafetyNotes(e.target.value)}
           />
         </Field>
       </section>
 
+      <section aria-labelledby="permits" className="flex flex-col gap-4">
+        <h2 id="permits" className="text-lg font-bold">
+          ใบอนุญาตทำงาน (Work Permits)
+        </h2>
+        <PermitsTable rows={permits} onUpdate={updatePermit} />
+      </section>
+
+      <section aria-labelledby="equipment" className="flex flex-col gap-4">
+        <h2 id="equipment" className="text-lg font-bold">
+          เครื่องจักร/อุปกรณ์ (Equipment)
+        </h2>
+        <EquipmentTable rows={machinery} onUpdate={updateMachinery} />
+      </section>
+
+      <section aria-labelledby="safety-topics" className="flex flex-col gap-4">
+        <h2 id="safety-topics" className="text-lg font-bold">
+          หัวข้ออบรม Safety Talk (Safety Topics)
+        </h2>
+        <SafetyTopicsList
+          topics={safetyTopics}
+          onUpdate={updateSafetyTopic}
+          onAdd={() => setSafetyTopics((rows) => [...rows, ""])}
+          onRemove={(i) => setSafetyTopics((rows) => rows.filter((_, j) => j !== i))}
+        />
+      </section>
+
+      <section aria-labelledby="material-receive" className="flex flex-col gap-4">
+        <h2 id="material-receive" className="text-lg font-bold">
+          วัสดุที่รับเข้า (Material Receive)
+        </h2>
+        <MaterialReceiveTable
+          rows={materialReceive}
+          onUpdate={updateMaterial}
+          onAdd={() =>
+            setMaterialReceive((rows) => [
+              ...rows,
+              { material: "", quantity: "", unit: "", receivedDate: "", remarks: "" },
+            ])
+          }
+          onRemove={(i) => setMaterialReceive((rows) => rows.filter((_, j) => j !== i))}
+        />
+      </section>
+
+      <section aria-labelledby="photos" className="flex flex-col gap-4">
+        <h2 id="photos" className="text-lg font-bold">
+          รูปภาพประกอบ (Photos)
+        </h2>
+        <PhotoPicker
+          label="รูปความคืบหน้า (Progress Photos)"
+          photos={progressPhotos}
+          onAdd={(files) => addPhotos(files, setProgressPhotos)}
+          onRemove={(i) => removePhoto(i, setProgressPhotos)}
+        />
+        <PhotoPicker
+          label="รูปความปลอดภัย (Safety Photos)"
+          photos={safetyPhotos}
+          onAdd={(files) => addPhotos(files, setSafetyPhotos)}
+          onRemove={(i) => removePhoto(i, setSafetyPhotos)}
+        />
+      </section>
+
       {reviewed ? (
-        <div
-          role="status"
-          className="flex flex-col gap-2 rounded-md border border-line bg-surface p-5"
-        >
+        <div role="status" className="flex flex-col gap-2 rounded-md border border-line bg-surface p-5">
           <h2 className="text-base font-bold">พร้อมส่งรายงาน</h2>
           <p className="text-sm text-muted">
-            {reportType === "morning_plan" ? "แผนงานช่วงเช้า" : "ผลงานจริงสิ้นวัน"} ·{" "}
-            วันที่ {reportDate} · กำลังคน {totals.crew} คน ·{" "}
-            {activities.filter((a) => a.description.trim()).length} กิจกรรม (การบันทึกลงฐานข้อมูลจะเชื่อมต่อใน Slice 4)
+            {reportType === "morning_plan" ? "แผนงานช่วงเช้า" : "ผลงานจริงสิ้นวัน"} · วันที่ {reportDate} ·
+            กำลังคน {totals.crew} คน · {activities.filter((a) => a.description.trim()).length} กิจกรรม ·
+            ใบอนุญาต {sectionCounts.permits} รายการ · อุปกรณ์ {sectionCounts.machinery} รายการ · วัสดุ{" "}
+            {sectionCounts.material} รายการ
           </p>
+          {submitError && <FormError message={submitError} />}
           <div className="mt-1 flex flex-wrap gap-2">
-            <Button disabled title="ระบบบันทึกลงฐานข้อมูลจะเปิดใช้งานใน Slice 4">
-              บันทึกรายงาน (Slice 4)
+            <Button onClick={onSubmit} loading={submitting}>
+              บันทึกรายงาน
             </Button>
-            <Button variant="secondary" onClick={() => setReviewed(false)}>
+            <Button variant="secondary" onClick={() => setReviewed(false)} disabled={submitting}>
               แก้ไขเพิ่มเติม
             </Button>
           </div>

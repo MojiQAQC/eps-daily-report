@@ -63,4 +63,27 @@ describe("renderReportXlsx", () => {
     expect(values).toContain("Safety Photo");
     expect(values).toContain("1-ppe-check.jpg");
   });
+
+  it("lists work permits, equipment, safety topics, and material receive entries", async () => {
+    const buffer = await renderReportXlsx(samplePayload);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
+    const sheet = workbook.getWorksheet("Report");
+    const values = sheet!.getSheetValues().flat().filter(Boolean).map(String);
+    expect(values).toContain("Hot Work");
+    expect(values).toContain("Crane");
+    expect(values).toContain("ตรวจสอบสายรัดนิรภัย");
+    expect(values).toContain("เหล็กเส้น");
+  });
+
+  it("marks JSA on activities that have it", async () => {
+    const buffer = await renderReportXlsx(samplePayload);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
+    const sheet = workbook.getWorksheet("Report");
+    const values = sheet!.getSheetValues().flat().filter(Boolean).map(String);
+    expect(values).toContain("Yes");
+  });
 });

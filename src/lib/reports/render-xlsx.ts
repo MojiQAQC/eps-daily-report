@@ -24,9 +24,16 @@ export async function renderReportXlsx(payload: ReportPayload): Promise<Buffer> 
   sheet.addRow([]);
 
   sheet.addRow(["Activities"]);
-  sheet.addRow(["Area", "Description", "Plan %", "Actual %", "Supervisor"]);
+  sheet.addRow(["Area", "Description", "Plan %", "Actual %", "Supervisor", "JSA"]);
   for (const a of payload.activities) {
-    sheet.addRow([a.area ?? "", a.description, a.planned_progress ?? "", a.actual_progress ?? "", a.supervisor ?? ""]);
+    sheet.addRow([
+      a.area ?? "",
+      a.description,
+      a.planned_progress ?? "",
+      a.actual_progress ?? "",
+      a.supervisor ?? "",
+      a.jsa ? "Yes" : "No",
+    ]);
   }
   sheet.addRow([]);
 
@@ -34,6 +41,49 @@ export async function renderReportXlsx(payload: ReportPayload): Promise<Buffer> 
   if (payload.safety) {
     sheet.addRow(["Accident Status", payload.safety.accident_status ?? ""]);
     sheet.addRow(["Remarks", payload.safety.remarks ?? ""]);
+  } else {
+    sheet.addRow(["No data"]);
+  }
+  sheet.addRow([]);
+
+  sheet.addRow(["Work Permits"]);
+  if (payload.permits.length > 0) {
+    sheet.addRow(["Permit Type", "Count", "Workers", "Remarks"]);
+    for (const p of payload.permits) {
+      sheet.addRow([p.permit_type, p.count ?? "", p.workers ?? "", p.remarks ?? ""]);
+    }
+  } else {
+    sheet.addRow(["No data"]);
+  }
+  sheet.addRow([]);
+
+  sheet.addRow(["Equipment"]);
+  if (payload.machinery.length > 0) {
+    sheet.addRow(["Machinery Type", "Quantity"]);
+    for (const m of payload.machinery) {
+      sheet.addRow([m.machinery_type, m.quantity]);
+    }
+  } else {
+    sheet.addRow(["No data"]);
+  }
+  sheet.addRow([]);
+
+  sheet.addRow(["Safety Topics"]);
+  if (payload.safetyTopics.length > 0) {
+    for (const t of payload.safetyTopics) {
+      sheet.addRow([t.topic]);
+    }
+  } else {
+    sheet.addRow(["No data"]);
+  }
+  sheet.addRow([]);
+
+  sheet.addRow(["Material Receive"]);
+  if (payload.materialReceive.length > 0) {
+    sheet.addRow(["Material", "Quantity", "Unit", "Received Date", "Remarks"]);
+    for (const m of payload.materialReceive) {
+      sheet.addRow([m.material_name, m.quantity ?? "", m.unit ?? "", m.received_date ?? "", m.remarks ?? ""]);
+    }
   } else {
     sheet.addRow(["No data"]);
   }

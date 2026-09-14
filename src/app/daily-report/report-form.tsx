@@ -387,10 +387,10 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
           <table className="w-full text-left text-sm">
             <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
               <tr>
-                <th className="px-3 py-2.5">ตำแหน่ง/หน้าที่ (Role)</th>
-                <th className="px-3 py-2.5 w-24">ชาย (คน)</th>
-                <th className="px-3 py-2.5 w-24">หญิง (คน)</th>
-                <th className="px-3 py-2.5 w-12">
+                <th scope="col" className="px-3 py-2.5">ตำแหน่ง/หน้าที่ (Role)</th>
+                <th scope="col" className="px-3 py-2.5 w-24">ชาย (คน)</th>
+                <th scope="col" className="px-3 py-2.5 w-24">หญิง (คน)</th>
+                <th scope="col" className="px-3 py-2.5 w-12">
                   <span className="sr-only">ลบแถว</span>
                 </th>
               </tr>
@@ -459,18 +459,18 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         <h2 id="activities" className="text-lg font-bold">
           กิจกรรมงาน (Activities)
         </h2>
-        <div className="overflow-x-auto rounded-md border border-line">
+        <div className="overflow-x-auto rounded-md border border-line contain-layout">
           <table className="w-full text-left text-sm">
             <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
               <tr>
-                <th className="px-3 py-2.5">พื้นที่ทำงาน (Area)</th>
-                <th className="px-3 py-2.5 min-w-[16rem]">รายละเอียดงาน (Description)</th>
-                <th className="px-3 py-2.5">ผู้ควบคุมงาน (Supervisor)</th>
-                <th className="px-3 py-2.5 w-28">
+                <th scope="col" className="px-3 py-2.5">พื้นที่ทำงาน (Area)</th>
+                <th scope="col" className="px-3 py-2.5 min-w-[16rem]">รายละเอียดงาน (Description)</th>
+                <th scope="col" className="px-3 py-2.5">ผู้ควบคุมงาน (Supervisor)</th>
+                <th scope="col" className="px-3 py-2.5 w-28">
                   {reportType === "morning_plan" ? "แผน (%)" : "จริง (%)"}
                 </th>
-                <th className="px-3 py-2.5 w-40">สถานะ (Status)</th>
-                <th className="px-3 py-2.5 w-12">
+                <th scope="col" className="px-3 py-2.5 w-40">สถานะ (Status)</th>
+                <th scope="col" className="px-3 py-2.5 w-12">
                   <span className="sr-only">ลบแถว</span>
                 </th>
               </tr>
@@ -489,6 +489,7 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
                   <td className="px-3 py-2 align-top">
                     <TextArea
                       rows={2}
+                      style={{ minHeight: "3.5rem" }}
                       placeholder="ระบุงานที่ทำหรือที่วางแผนไว้ ให้ชัดเจนพอที่ทีมงานรอบถัดไปจะตรวจสอบได้"
                       value={row.description}
                       aria-label={`กิจกรรมที่ ${i + 1} รายละเอียดงาน`}

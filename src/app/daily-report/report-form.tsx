@@ -40,7 +40,51 @@ interface ActivityRow {
   progress: string;
   status: "" | WorkStatus;
   supervisor: string;
+  jsa: boolean;
 }
+
+interface PermitRow {
+  type: string;
+  count: string;
+  workers: string;
+  remarks: string;
+}
+
+interface MachineryRow {
+  type: string;
+  quantity: string;
+}
+
+interface MaterialRow {
+  material: string;
+  quantity: string;
+  unit: string;
+  receivedDate: string;
+  remarks: string;
+}
+
+const PERMIT_TYPES = [
+  "Hot Work",
+  "Work at Height",
+  "Lifting",
+  "LOTO",
+  "Confined Space",
+  "Energized Equipment Work",
+  "Other",
+];
+
+const MACHINERY_TYPES = [
+  "Welding Machine",
+  "Hand Tool Equipment",
+  "Crane",
+  "Hieb/Hiab",
+  "Trailer/Truck",
+  "Tractor/Backhoe/Grader",
+  "Compactor",
+  "Forklift",
+  "Excavator",
+  "Concrete Pump Truck",
+];
 
 interface PhotoFile {
   file: File;
@@ -87,6 +131,238 @@ function PhotoPicker({
   );
 }
 
+function PermitsTable({
+  rows,
+  onUpdate,
+}: {
+  rows: PermitRow[];
+  onUpdate: (index: number, patch: Partial<PermitRow>) => void;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-line">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+          <tr>
+            <th scope="col" className="px-3 py-2.5">ประเภทใบอนุญาต (Permit Type)</th>
+            <th scope="col" className="px-3 py-2.5 w-24">จำนวน</th>
+            <th scope="col" className="px-3 py-2.5 w-24">คนทำงาน</th>
+            <th scope="col" className="px-3 py-2.5">หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.map((row, i) => (
+            <tr key={row.type}>
+              <td className="px-3 py-2 font-medium">{row.type}</td>
+              <td className="px-3 py-2">
+                <TextInput
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={row.count}
+                  aria-label={`${row.type} จำนวน`}
+                  onChange={(e) => onUpdate(i, { count: e.target.value })}
+                />
+              </td>
+              <td className="px-3 py-2">
+                <TextInput
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={row.workers}
+                  aria-label={`${row.type} คนทำงาน`}
+                  onChange={(e) => onUpdate(i, { workers: e.target.value })}
+                />
+              </td>
+              <td className="px-3 py-2">
+                <TextInput
+                  placeholder="หมายเหตุ"
+                  value={row.remarks}
+                  aria-label={`${row.type} หมายเหตุ`}
+                  onChange={(e) => onUpdate(i, { remarks: e.target.value })}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function EquipmentTable({
+  rows,
+  onUpdate,
+}: {
+  rows: MachineryRow[];
+  onUpdate: (index: number, patch: Partial<MachineryRow>) => void;
+}) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-line">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+          <tr>
+            <th scope="col" className="px-3 py-2.5">ประเภทเครื่องจักร (Machinery Type)</th>
+            <th scope="col" className="px-3 py-2.5 w-32">จำนวน (Quantity)</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rows.map((row, i) => (
+            <tr key={row.type}>
+              <td className="px-3 py-2 font-medium">{row.type}</td>
+              <td className="px-3 py-2">
+                <TextInput
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={row.quantity}
+                  aria-label={`${row.type} จำนวน`}
+                  onChange={(e) => onUpdate(i, { quantity: e.target.value })}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function SafetyTopicsList({
+  topics,
+  onUpdate,
+  onAdd,
+  onRemove,
+}: {
+  topics: string[];
+  onUpdate: (index: number, value: string) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      {topics.map((topic, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <TextInput
+            placeholder="เช่น ตรวจสอบสายรัดนิรภัยสำหรับงานที่สูง"
+            value={topic}
+            aria-label={`หัวข้อ Safety Talk ที่ ${i + 1}`}
+            onChange={(e) => onUpdate(i, e.target.value)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemove(i)}
+            disabled={topics.length === 1}
+            aria-label={`ลบหัวข้อที่ ${i + 1}`}
+            title="ลบแถว"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
+        </div>
+      ))}
+      <div>
+        <Button variant="secondary" onClick={onAdd}>
+          + เพิ่มหัวข้อ
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function MaterialReceiveTable({
+  rows,
+  onUpdate,
+  onAdd,
+  onRemove,
+}: {
+  rows: MaterialRow[];
+  onUpdate: (index: number, patch: Partial<MaterialRow>) => void;
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="overflow-x-auto rounded-md border border-line">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+            <tr>
+              <th scope="col" className="px-3 py-2.5">วัสดุ (Material)</th>
+              <th scope="col" className="px-3 py-2.5 w-24">จำนวน</th>
+              <th scope="col" className="px-3 py-2.5 w-24">หน่วย</th>
+              <th scope="col" className="px-3 py-2.5 w-36">วันที่รับ</th>
+              <th scope="col" className="px-3 py-2.5">หมายเหตุ</th>
+              <th scope="col" className="px-3 py-2.5 w-12">
+                <span className="sr-only">ลบแถว</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {rows.map((row, i) => (
+              <tr key={i}>
+                <td className="px-3 py-2">
+                  <TextInput
+                    placeholder="เช่น เหล็กเส้น"
+                    value={row.material}
+                    aria-label={`วัสดุแถวที่ ${i + 1} ชื่อวัสดุ`}
+                    onChange={(e) => onUpdate(i, { material: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    inputMode="decimal"
+                    placeholder="0"
+                    value={row.quantity}
+                    aria-label={`วัสดุแถวที่ ${i + 1} จำนวน`}
+                    onChange={(e) => onUpdate(i, { quantity: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    placeholder="เช่น kg, ตัน"
+                    value={row.unit}
+                    aria-label={`วัสดุแถวที่ ${i + 1} หน่วย`}
+                    onChange={(e) => onUpdate(i, { unit: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    type="date"
+                    value={row.receivedDate}
+                    aria-label={`วัสดุแถวที่ ${i + 1} วันที่รับ`}
+                    onChange={(e) => onUpdate(i, { receivedDate: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <TextInput
+                    placeholder="หมายเหตุ"
+                    value={row.remarks}
+                    aria-label={`วัสดุแถวที่ ${i + 1} หมายเหตุ`}
+                    onChange={(e) => onUpdate(i, { remarks: e.target.value })}
+                  />
+                </td>
+                <td className="px-3 py-2 text-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onRemove(i)}
+                    disabled={rows.length === 1}
+                    aria-label={`ลบวัสดุแถวที่ ${i + 1}`}
+                    title="ลบแถว"
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <Button variant="secondary" onClick={onAdd}>
+          + เพิ่มวัสดุ
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -104,9 +380,21 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     { role: "", male: "", female: "" },
   ]);
   const [activities, setActivities] = useState<ActivityRow[]>([
-    { area: "", description: "", progress: "", status: "", supervisor: "" },
+    { area: "", description: "", progress: "", status: "", supervisor: "", jsa: false },
   ]);
   const [safetyNotes, setSafetyNotes] = useState("");
+  const [permits, setPermits] = useState<PermitRow[]>(
+    PERMIT_TYPES.map((type) => ({ type, count: "", workers: "", remarks: "" })),
+  );
+  const [machinery, setMachinery] = useState<MachineryRow[]>(
+    MACHINERY_TYPES.map((type) => ({ type, quantity: "" })),
+  );
+  const [safetyTopics, setSafetyTopics] = useState<string[]>([""]);
+  const [materialReceive, setMaterialReceive] = useState<MaterialRow[]>([
+    { material: "", quantity: "", unit: "", receivedDate: "", remarks: "" },
+  ]);
+  const [cumulativePlanPct, setCumulativePlanPct] = useState("");
+  const [cumulativeActualPct, setCumulativeActualPct] = useState("");
   const [progressPhotos, setProgressPhotos] = useState<PhotoFile[]>([]);
   const [safetyPhotos, setSafetyPhotos] = useState<PhotoFile[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
@@ -148,6 +436,22 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     setActivities((rows) =>
       rows.map((r, i) => (i === index ? { ...r, ...patch } : r)),
     );
+  }
+
+  function updatePermit(index: number, patch: Partial<PermitRow>) {
+    setPermits((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+
+  function updateMachinery(index: number, patch: Partial<MachineryRow>) {
+    setMachinery((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
+  }
+
+  function updateSafetyTopic(index: number, value: string) {
+    setSafetyTopics((rows) => rows.map((r, i) => (i === index ? value : r)));
+  }
+
+  function updateMaterial(index: number, patch: Partial<MaterialRow>) {
+    setMaterialReceive((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
 
   function validate(): string[] {
@@ -370,6 +674,24 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
               ))}
             </Select>
           </Field>
+          <Field label="ความก้าวหน้าสะสม - แผน (%)" htmlFor="cumulative-plan">
+            <TextInput
+              id="cumulative-plan"
+              inputMode="decimal"
+              placeholder="0–100"
+              value={cumulativePlanPct}
+              onChange={(e) => setCumulativePlanPct(e.target.value)}
+            />
+          </Field>
+          <Field label="ความก้าวหน้าสะสม - จริง (%)" htmlFor="cumulative-actual">
+            <TextInput
+              id="cumulative-actual"
+              inputMode="decimal"
+              placeholder="0–100"
+              value={cumulativeActualPct}
+              onChange={(e) => setCumulativeActualPct(e.target.value)}
+            />
+          </Field>
         </div>
       </section>
 
@@ -470,6 +792,7 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
                   {reportType === "morning_plan" ? "แผน (%)" : "จริง (%)"}
                 </th>
                 <th scope="col" className="px-3 py-2.5 w-40">สถานะ (Status)</th>
+                <th scope="col" className="px-3 py-2.5 w-16">JSA</th>
                 <th scope="col" className="px-3 py-2.5 w-12">
                   <span className="sr-only">ลบแถว</span>
                 </th>
@@ -533,6 +856,15 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
                     </Select>
                   </td>
                   <td className="px-3 py-2 align-top text-center">
+                    <input
+                      type="checkbox"
+                      checked={row.jsa}
+                      onChange={(e) => updateActivity(i, { jsa: e.target.checked })}
+                      aria-label={`กิจกรรมที่ ${i + 1} JSA`}
+                      className="h-5 w-5 rounded border-line"
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top text-center">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -557,7 +889,7 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
             onClick={() =>
               setActivities((rows) => [
                 ...rows,
-                { area: "", description: "", progress: "", status: "", supervisor: "" },
+                { area: "", description: "", progress: "", status: "", supervisor: "", jsa: false },
               ])
             }
           >
@@ -582,6 +914,49 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
             onChange={(e) => setSafetyNotes(e.target.value)}
           />
         </Field>
+      </section>
+
+      <section aria-labelledby="permits" className="flex flex-col gap-4">
+        <h2 id="permits" className="text-lg font-bold">
+          ใบอนุญาตทำงาน (Work Permits)
+        </h2>
+        <PermitsTable rows={permits} onUpdate={updatePermit} />
+      </section>
+
+      <section aria-labelledby="equipment" className="flex flex-col gap-4">
+        <h2 id="equipment" className="text-lg font-bold">
+          เครื่องจักร/อุปกรณ์ (Equipment)
+        </h2>
+        <EquipmentTable rows={machinery} onUpdate={updateMachinery} />
+      </section>
+
+      <section aria-labelledby="safety-topics" className="flex flex-col gap-4">
+        <h2 id="safety-topics" className="text-lg font-bold">
+          หัวข้ออบรม Safety Talk (Safety Topics)
+        </h2>
+        <SafetyTopicsList
+          topics={safetyTopics}
+          onUpdate={updateSafetyTopic}
+          onAdd={() => setSafetyTopics((rows) => [...rows, ""])}
+          onRemove={(i) => setSafetyTopics((rows) => rows.filter((_, j) => j !== i))}
+        />
+      </section>
+
+      <section aria-labelledby="material-receive" className="flex flex-col gap-4">
+        <h2 id="material-receive" className="text-lg font-bold">
+          วัสดุที่รับเข้า (Material Receive)
+        </h2>
+        <MaterialReceiveTable
+          rows={materialReceive}
+          onUpdate={updateMaterial}
+          onAdd={() =>
+            setMaterialReceive((rows) => [
+              ...rows,
+              { material: "", quantity: "", unit: "", receivedDate: "", remarks: "" },
+            ])
+          }
+          onRemove={(i) => setMaterialReceive((rows) => rows.filter((_, j) => j !== i))}
+        />
       </section>
 
       <section aria-labelledby="photos" className="flex flex-col gap-4">

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -154,12 +155,14 @@ export function AppShell({
             {open ? <X className="h-5 w-5" aria-hidden /> : <Menu className="h-5 w-5" aria-hidden />}
           </button>
           <Link href="/" className="flex min-w-0 items-center gap-2.5">
-            <span
-              aria-hidden
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-bold text-onprimary"
-            >
-              EPS
-            </span>
+            <Image
+              src="/eps-logo.jpg"
+              alt="EPS"
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 rounded-md object-contain"
+              priority
+            />
             <span className="min-w-0">
               <span className="block truncate text-sm font-bold leading-tight">
                 Daily Report

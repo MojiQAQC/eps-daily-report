@@ -7,6 +7,9 @@ export const metadata = {
     template: "%s · EPS Daily Report",
   },
   description: "ระบบรายงานประจำวันและติดตามงานก่อสร้าง EPS",
+  icons: {
+    icon: "/eps-logo.jpg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -373,6 +373,24 @@ function toCount(value: string): number | null {
   return Number.isInteger(n) && n >= 0 ? n : NaN;
 }
 
+function toDecimal(value: string): number | null {
+  if (value.trim() === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+
+function toPercent(value: string): number | null {
+  if (value.trim() === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 && n <= 100 ? n : NaN;
+}
+
+function numOrNull(value: string): number | null {
+  if (!value.trim()) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function ReportForm({ initialType }: { initialType: ReportType }) {
   const [reportType, setReportType] = useState<ReportType>(initialType);
   const [reportDate, setReportDate] = useState(todayISO());
@@ -428,6 +446,15 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     return { male, female, crew: male + female };
   }, [workforce]);
 
+  const sectionCounts = useMemo(
+    () => ({
+      permits: permits.filter((p) => p.count.trim() || p.workers.trim() || p.remarks.trim()).length,
+      machinery: machinery.filter((m) => m.quantity.trim()).length,
+      material: materialReceive.filter((m) => m.material.trim()).length,
+    }),
+    [permits, machinery, materialReceive],
+  );
+
   function updateWorkforce(index: number, patch: Partial<WorkforceRow>) {
     setWorkforce((rows) => rows.map((r, i) => (i === index ? { ...r, ...patch } : r)));
   }
@@ -471,6 +498,22 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
     activities.forEach((a, i) => {
       if (a.progress.trim() !== "" && Number.isNaN(Number(a.progress)))
         found.push(`กิจกรรมที่ ${i + 1}: ความก้าวหน้าต้องเป็นตัวเลข`);
+    });
+    if (Number.isNaN(toPercent(cumulativePlanPct)))
+      found.push("ความก้าวหน้าสะสม - แผน (%): ต้องเป็นตัวเลข 0–100");
+    if (Number.isNaN(toPercent(cumulativeActualPct)))
+      found.push("ความก้าวหน้าสะสม - จริง (%): ต้องเป็นตัวเลข 0–100");
+    permits.forEach((p) => {
+      if (Number.isNaN(toCount(p.count)) || Number.isNaN(toCount(p.workers)))
+        found.push(`ใบอนุญาตทำงาน ${p.type}: จำนวนและคนทำงานต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 0 ขึ้นไป`);
+    });
+    machinery.forEach((m) => {
+      if (Number.isNaN(toCount(m.quantity)))
+        found.push(`เครื่องจักร/อุปกรณ์ ${m.type}: จำนวนต้องเป็นตัวเลขจำนวนเต็มตั้งแต่ 0 ขึ้นไป`);
+    });
+    materialReceive.forEach((m, i) => {
+      if (Number.isNaN(toDecimal(m.quantity)))
+        found.push(`วัสดุแถวที่ ${i + 1}: จำนวนต้องเป็นตัวเลขตั้งแต่ 0 ขึ้นไป`);
     });
     return found;
   }
@@ -529,8 +572,8 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
           report_type: reportType,
           status: "submitted",
           created_by: user.id,
-          cumulative_plan_pct: cumulativePlanPct.trim() ? Number(cumulativePlanPct) : null,
-          cumulative_actual_pct: cumulativeActualPct.trim() ? Number(cumulativeActualPct) : null,
+          cumulative_plan_pct: numOrNull(cumulativePlanPct),
+          cumulative_actual_pct: numOrNull(cumulativeActualPct),
         })
         .select("id")
         .single();
@@ -594,8 +637,8 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         .map((p) => ({
           daily_report_id: report.id,
           permit_type: p.type,
-          count: p.count.trim() ? Number(p.count) : null,
-          workers: p.workers.trim() ? Number(p.workers) : null,
+          count: numOrNull(p.count),
+          workers: numOrNull(p.workers),
           remarks: p.remarks.trim() || null,
         }));
       if (permitRows.length > 0) {
@@ -611,7 +654,7 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         .map((m) => ({
           daily_report_id: report.id,
           machinery_type: m.type,
-          quantity: Number(m.quantity),
+          quantity: numOrNull(m.quantity),
         }));
       if (machineryRows.length > 0) {
         const { error } = await supabase.from("daily_report_machinery").insert(machineryRows);
@@ -637,7 +680,7 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         .map((m) => ({
           daily_report_id: report.id,
           material_name: m.material.trim(),
-          quantity: m.quantity.trim() ? Number(m.quantity) : null,
+          quantity: numOrNull(m.quantity),
           unit: m.unit.trim() || null,
           received_date: m.receivedDate || null,
           remarks: m.remarks.trim() || null,
@@ -925,7 +968,7 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
                       checked={row.jsa}
                       onChange={(e) => updateActivity(i, { jsa: e.target.checked })}
                       aria-label={`กิจกรรมที่ ${i + 1} JSA`}
-                      className="h-5 w-5 rounded border-line"
+                      className="h-6 w-6 rounded border-line accent-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                     />
                   </td>
                   <td className="px-3 py-2 align-top text-center">
@@ -969,11 +1012,11 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         <Field
           label="บันทึกความปลอดภัย (Safety Notes)"
           htmlFor="safety-notes"
-          hint="สถิติอุบัติเหตุ, จำนวนวันไร้อุบัติเหตุ, และหัวข้ออบรม Safety Talk วันนี้"
+          hint="สถิติอุบัติเหตุ และจำนวนวันไร้อุบัติเหตุ"
         >
           <TextArea
             id="safety-notes"
-            placeholder="เช่น ไม่มีอุบัติเหตุ จำนวนวันไร้อุบัติเหตุสะสม: 431 วัน หัวข้ออบรม: ตรวจสอบสายรัดนิรภัยสำหรับงานที่สูง"
+            placeholder="เช่น ไม่มีอุบัติเหตุ จำนวนวันไร้อุบัติเหตุสะสม: 431 วัน"
             value={safetyNotes}
             onChange={(e) => setSafetyNotes(e.target.value)}
           />
@@ -1046,7 +1089,9 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
           <h2 className="text-base font-bold">พร้อมส่งรายงาน</h2>
           <p className="text-sm text-muted">
             {reportType === "morning_plan" ? "แผนงานช่วงเช้า" : "ผลงานจริงสิ้นวัน"} · วันที่ {reportDate} ·
-            กำลังคน {totals.crew} คน · {activities.filter((a) => a.description.trim()).length} กิจกรรม
+            กำลังคน {totals.crew} คน · {activities.filter((a) => a.description.trim()).length} กิจกรรม ·
+            ใบอนุญาต {sectionCounts.permits} รายการ · อุปกรณ์ {sectionCounts.machinery} รายการ · วัสดุ{" "}
+            {sectionCounts.material} รายการ
           </p>
           {submitError && <FormError message={submitError} />}
           <div className="mt-1 flex flex-wrap gap-2">

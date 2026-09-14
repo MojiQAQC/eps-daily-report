@@ -25,10 +25,11 @@ daily_reports
                                    not a column, so roles are extensible)
   -> daily_report_permits        (permit_type, count, workers, remarks)
   -> daily_report_activities     (area, description, planned/actual progress,
-                                   status, supervisor, remarks — no activity_1/2/3)
+                                   status, supervisor, remarks, jsa — no activity_1/2/3)
   -> daily_report_machinery      (machinery_type, quantity)
   -> daily_report_safety         (accident status, accident-free days, remarks)
   -> daily_report_safety_topics  (safety talk topics, many per report)
+  -> daily_report_material_receive (material_name, quantity, unit, received_date, remarks)
   -> weather snapshot (fields on daily_reports or a linked weather_snapshots row,
                          with a retrieved_at timestamp — TBD when Weather API lands)
 ```

@@ -83,7 +83,30 @@ describe("renderReportXlsx", () => {
     await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
 
     const sheet = workbook.getWorksheet("Report");
+    let activityRow: ExcelJS.Row | undefined;
+    sheet!.eachRow((row) => {
+      if (row.getCell(2).value === "งานเชื่อม") activityRow = row;
+    });
+    expect(activityRow).toBeDefined();
+    // Area, Description, Plan %, Actual %, Supervisor, JSA
+    expect(activityRow!.getCell(6).value).toBe("Yes");
+  });
+
+  it("shows No data for work permits, equipment, safety topics, and material receive when empty", async () => {
+    const buffer = await renderReportXlsx({
+      ...samplePayload,
+      permits: [],
+      machinery: [],
+      safetyTopics: [],
+      materialReceive: [],
+    });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+
+    const sheet = workbook.getWorksheet("Report");
     const values = sheet!.getSheetValues().flat().filter(Boolean).map(String);
-    expect(values).toContain("Yes");
+    const noDataCount = values.filter((v) => v === "No data").length;
+    // safety still has data in samplePayload, so only these 4 empty sections fall back
+    expect(noDataCount).toBe(4);
   });
 });

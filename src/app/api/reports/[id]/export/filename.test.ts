@@ -22,6 +22,10 @@ function makePayload(overrides: Partial<ReportPayload> = {}): ReportPayload {
     activities: [],
     safety: null,
     attachments: [],
+    permits: [],
+    machinery: [],
+    safetyTopics: [],
+    materialReceive: [],
     ...overrides,
   };
 }

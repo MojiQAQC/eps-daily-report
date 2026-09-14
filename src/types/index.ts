@@ -108,6 +108,7 @@ export interface DailyReportActivity {
   status?: WorkStatus | null;
   supervisor?: string | null;
   remarks?: string | null;
+  jsa: boolean;
 }
 
 export interface DailyReportSafety {
@@ -125,6 +126,38 @@ export interface DailyReportAttachment {
   url?: string | null;
 }
 
+export interface DailyReportPermit {
+  id: string;
+  daily_report_id: string;
+  permit_type: string;
+  count?: number | null;
+  workers?: number | null;
+  remarks?: string | null;
+}
+
+export interface DailyReportMachinery {
+  id: string;
+  daily_report_id: string;
+  machinery_type: string;
+  quantity: number;
+}
+
+export interface DailyReportSafetyTopic {
+  id: string;
+  daily_report_id: string;
+  topic: string;
+}
+
+export interface DailyReportMaterialReceipt {
+  id: string;
+  daily_report_id: string;
+  material_name: string;
+  quantity?: number | null;
+  unit?: string | null;
+  received_date?: string | null;
+  remarks?: string | null;
+}
+
 export interface ReportPayload {
   report: DailyReport;
   projectName: string;
@@ -135,4 +168,8 @@ export interface ReportPayload {
   activities: DailyReportActivity[];
   safety: DailyReportSafety | null;
   attachments: DailyReportAttachment[];
+  permits: DailyReportPermit[];
+  machinery: DailyReportMachinery[];
+  safetyTopics: DailyReportSafetyTopic[];
+  materialReceive: DailyReportMaterialReceipt[];
 }

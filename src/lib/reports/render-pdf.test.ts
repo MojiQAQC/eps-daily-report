@@ -13,10 +13,14 @@ const samplePayload: ReportPayload = {
   contractorShortCode: "RETS",
   workforce: [{ id: "w1", daily_report_id: "r1", role_name: "รวมกำลังคนวันนี้", male_count: 15, female_count: 0 }],
   activities: [
-    { id: "a1", daily_report_id: "r1", area: "Stack", description: "งานเชื่อม", planned_progress: 20, actual_progress: 20 },
+    { id: "a1", daily_report_id: "r1", area: "Stack", description: "งานเชื่อม", planned_progress: 20, actual_progress: 20, jsa: true },
   ],
   safety: { daily_report_id: "r1", accident_status: "ไม่มีอุบัติเหตุ" },
   attachments: [],
+  permits: [{ id: "pm1", daily_report_id: "r1", permit_type: "Hot Work", count: 2, workers: 4, remarks: null }],
+  machinery: [{ id: "mc1", daily_report_id: "r1", machinery_type: "Crane", quantity: 1 }],
+  safetyTopics: [{ id: "st1", daily_report_id: "r1", topic: "ตรวจสอบสายรัดนิรภัย" }],
+  materialReceive: [{ id: "mr1", daily_report_id: "r1", material_name: "เหล็กเส้น", quantity: 500, unit: "kg", received_date: "2026-09-04", remarks: null }],
 };
 
 describe("renderReportPdf", () => {

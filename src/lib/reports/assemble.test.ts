@@ -10,6 +10,10 @@ function makeSupabaseStub(overrides: {
   activities: any[];
   safety: any | null;
   attachments: any[];
+  permits?: any[];
+  machinery?: any[];
+  safetyTopics?: any[];
+  materialReceive?: any[];
 }) {
   return {
     from(table: string) {
@@ -33,6 +37,14 @@ function makeSupabaseStub(overrides: {
             return resolve({ data: overrides.activities, error: null });
           if (table === "attachments")
             return resolve({ data: overrides.attachments, error: null });
+          if (table === "daily_report_permits")
+            return resolve({ data: overrides.permits ?? [], error: null });
+          if (table === "daily_report_machinery")
+            return resolve({ data: overrides.machinery ?? [], error: null });
+          if (table === "daily_report_safety_topics")
+            return resolve({ data: overrides.safetyTopics ?? [], error: null });
+          if (table === "daily_report_material_receive")
+            return resolve({ data: overrides.materialReceive ?? [], error: null });
           return resolve({ data: [], error: null });
         },
       };
@@ -113,5 +125,32 @@ describe("assembleReportPayload", () => {
 
     expect(payload!.attachments).toHaveLength(1);
     expect(payload!.attachments[0].url).toBe("https://signed.example/r1/progress_photo/1-photo.jpg");
+  });
+
+  it("joins permits, machinery, safety topics, and material receive rows", async () => {
+    const supabase = makeSupabaseStub({
+      report: {
+        id: "r1", project_id: "p1", contractor_id: "c1", report_date: "2026-09-04",
+        report_type: "end_of_day_actual", status: "submitted", created_at: "2026-09-04T10:00:00Z",
+      },
+      project: { name: "STS-9.9 MW Biomass Power Plant", code: "STSBPP" },
+      contractor: { name: "RETS", short_code: "RETS" },
+      workforce: [], activities: [], safety: null, attachments: [],
+      permits: [{ id: "pm1", daily_report_id: "r1", permit_type: "Hot Work", count: 2, workers: 4 }],
+      machinery: [{ id: "mc1", daily_report_id: "r1", machinery_type: "Crane", quantity: 1 }],
+      safetyTopics: [{ id: "st1", daily_report_id: "r1", topic: "ตรวจสอบสายรัดนิรภัย" }],
+      materialReceive: [{ id: "mr1", daily_report_id: "r1", material_name: "เหล็กเส้น", quantity: 500 }],
+    });
+
+    const payload = await assembleReportPayload(supabase as any, "r1");
+
+    expect(payload!.permits).toHaveLength(1);
+    expect(payload!.permits[0].permit_type).toBe("Hot Work");
+    expect(payload!.machinery).toHaveLength(1);
+    expect(payload!.machinery[0].machinery_type).toBe("Crane");
+    expect(payload!.safetyTopics).toHaveLength(1);
+    expect(payload!.safetyTopics[0].topic).toBe("ตรวจสอบสายรัดนิรภัย");
+    expect(payload!.materialReceive).toHaveLength(1);
+    expect(payload!.materialReceive[0].material_name).toBe("เหล็กเส้น");
   });
 });

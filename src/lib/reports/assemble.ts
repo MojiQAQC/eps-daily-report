@@ -2,7 +2,11 @@ import type {
   DailyReport,
   DailyReportActivity,
   DailyReportAttachment,
+  DailyReportMachinery,
+  DailyReportMaterialReceipt,
+  DailyReportPermit,
   DailyReportSafety,
+  DailyReportSafetyTopic,
   DailyReportWorkforce,
   ReportPayload,
 } from "@/types";
@@ -39,6 +43,10 @@ export async function assembleReportPayload(
     activitiesRes,
     { data: safety },
     attachmentsRes,
+    permitsRes,
+    machineryRes,
+    safetyTopicsRes,
+    materialReceiveRes,
   ] = await Promise.all([
     supabase.from("projects").select("name, code").eq("id", report.project_id).single(),
     supabase.from("contractors").select("name, short_code").eq("id", report.contractor_id).single(),
@@ -51,6 +59,10 @@ export async function assembleReportPayload(
       .eq("daily_report_id", reportId)
       .in("kind", ["progress_photo", "safety_photo"])
       .order("created_at", { ascending: true }),
+    supabase.from("daily_report_permits").select("*").eq("daily_report_id", reportId),
+    supabase.from("daily_report_machinery").select("*").eq("daily_report_id", reportId),
+    supabase.from("daily_report_safety_topics").select("*").eq("daily_report_id", reportId),
+    supabase.from("daily_report_material_receive").select("*").eq("daily_report_id", reportId),
   ]);
 
   const attachments: DailyReportAttachment[] = await Promise.all(
@@ -72,5 +84,9 @@ export async function assembleReportPayload(
     activities: (activitiesRes.data ?? []) as DailyReportActivity[],
     safety: (safety ?? null) as DailyReportSafety | null,
     attachments,
+    permits: (permitsRes.data ?? []) as DailyReportPermit[],
+    machinery: (machineryRes.data ?? []) as DailyReportMachinery[],
+    safetyTopics: (safetyTopicsRes.data ?? []) as DailyReportSafetyTopic[],
+    materialReceive: (materialReceiveRes.data ?? []) as DailyReportMaterialReceipt[],
   };
 }

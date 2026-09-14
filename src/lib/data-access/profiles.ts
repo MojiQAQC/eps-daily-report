@@ -15,6 +15,13 @@ export async function getProfileById(
     .eq("id", userId)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    // Real failure (RLS denial, network, …) — not "no profile row".
+    // Still fail closed (null), but say so: silent nulls disguise outages
+    // as signed-out guests.
+    console.warn("getProfileById failed:", error.message);
+    return null;
+  }
+  if (!data) return null;
   return data as Profile;
 }

@@ -35,40 +35,60 @@ export function useMyProfile(): MyProfileState {
     let cancelled = false;
     const done = (patch: Omit<MyProfileState, "loading">) =>
       setState({ ...patch, loading: false });
+    const empty: Omit<MyProfileState, "loading"> = {
+      userId: null,
+      profile: null,
+      role: null,
+      displayName: null,
+      email: null,
+    };
+
+    async function resolve() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (cancelled) return;
+        if (!user) {
+          done({ ...empty });
+          return;
+        }
+        const displayName =
+          (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name) ||
+          user.email ||
+          null;
+        const profile = await getProfileById(supabase, user.id);
+        if (cancelled) return;
+        done({
+          userId: user.id,
+          profile,
+          role: profile?.role ?? null,
+          displayName,
+          email: user.email ?? null,
+        });
+      } catch {
+        if (!cancelled) done({ ...empty });
+      }
+    }
+
+    void resolve();
+
+    // Re-resolve on sign-in/out in this or another tab so role views never
+    // go stale (gating data itself stays RLS/API-enforced regardless).
+    let unsubscribe: (() => void) | undefined;
     try {
       const supabase = createClient();
-      supabase.auth
-        .getUser()
-        .then(({ data }) => {
-          if (cancelled) return;
-          const user = data?.user;
-          if (!user) {
-            done({ userId: null, profile: null, role: null, displayName: null, email: null });
-            return;
-          }
-          const displayName =
-            (typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name) ||
-            user.email ||
-            null;
-          getProfileById(supabase, user.id).then((profile) => {
-            if (cancelled) return;
-            done({
-              userId: user.id,
-              profile,
-              role: profile?.role ?? null,
-              displayName,
-              email: user.email ?? null,
-            });
-          });
-        })
-        .catch(() => {
-          if (!cancelled) done({ userId: null, profile: null, role: null, displayName: null, email: null });
-        });
+      const { data: listener } = supabase.auth.onAuthStateChange(() => {
+        if (!cancelled) void resolve();
+      });
+      unsubscribe = () => listener?.subscription?.unsubscribe?.();
     } catch {
-      if (!cancelled) done({ userId: null, profile: null, role: null, displayName: null, email: null });
+      // Auth listener is best-effort; initial resolve above already ran.
     }
     return () => {
       cancelled = true;
+      unsubscribe?.();
     };
   }, []);
 

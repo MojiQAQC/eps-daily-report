@@ -41,3 +41,6 @@ scripts/
 
 # Isolated worktrees for subagent-driven-development plans
 .worktrees/
+
+# Impeccable skill artifacts (local design cache, not source)
+.impeccable/

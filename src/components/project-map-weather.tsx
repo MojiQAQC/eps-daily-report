@@ -230,17 +230,17 @@ export function ProjectMapWeather() {
 
             <div className="mt-4 grid grid-cols-3 gap-2 rounded-md bg-surface2 p-2.5 text-center">
               <div>
-                <span className="block text-[11px] text-muted">ความชื้น</span>
+                <span className="block text-xs text-muted">ความชื้น</span>
                 <span className="text-sm font-bold tabular-nums text-ink">{weather?.humidity ?? 80}%</span>
               </div>
               <div className="border-x border-line">
-                <span className="block text-[11px] text-muted">ความเร็วลม</span>
+                <span className="block text-xs text-muted">ความเร็วลม</span>
                 <span className="text-sm font-bold tabular-nums text-ink">
-                  {weather?.windSpeedMph ?? 7.5} <span className="text-[10px] font-normal text-muted">mph</span>
+                  {weather?.windSpeedMph ?? 7.5} <span className="text-xs font-normal text-muted">mph</span>
                 </span>
               </div>
               <div>
-                <span className="block text-[11px] text-muted">ปริมาณฝน</span>
+                <span className="block text-xs text-muted">ปริมาณฝน</span>
                 <span className="text-sm font-bold tabular-nums text-ink">{weather?.precipitation ?? 0} mm</span>
               </div>
             </div>

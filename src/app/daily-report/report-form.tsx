@@ -529,6 +529,8 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
           report_type: reportType,
           status: "submitted",
           created_by: user.id,
+          cumulative_plan_pct: cumulativePlanPct.trim() ? Number(cumulativePlanPct) : null,
+          cumulative_actual_pct: cumulativeActualPct.trim() ? Number(cumulativeActualPct) : null,
         })
         .select("id")
         .single();
@@ -567,6 +569,7 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
           actual_progress: reportType === "end_of_day_actual" && a.progress.trim() ? Number(a.progress) : null,
           status: a.status || null,
           supervisor: a.supervisor.trim() || null,
+          jsa: a.jsa,
         }));
       if (activityRows.length > 0) {
         const { error } = await supabase.from("daily_report_activities").insert(activityRows);
@@ -582,6 +585,67 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
           .insert({ daily_report_id: report.id, remarks: safetyNotes.trim() });
         if (error) {
           setSubmitError(`บันทึกข้อมูลความปลอดภัยไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const permitRows = permits
+        .filter((p) => p.count.trim() || p.workers.trim() || p.remarks.trim())
+        .map((p) => ({
+          daily_report_id: report.id,
+          permit_type: p.type,
+          count: p.count.trim() ? Number(p.count) : null,
+          workers: p.workers.trim() ? Number(p.workers) : null,
+          remarks: p.remarks.trim() || null,
+        }));
+      if (permitRows.length > 0) {
+        const { error } = await supabase.from("daily_report_permits").insert(permitRows);
+        if (error) {
+          setSubmitError(`บันทึกใบอนุญาตทำงานไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const machineryRows = machinery
+        .filter((m) => m.quantity.trim())
+        .map((m) => ({
+          daily_report_id: report.id,
+          machinery_type: m.type,
+          quantity: Number(m.quantity),
+        }));
+      if (machineryRows.length > 0) {
+        const { error } = await supabase.from("daily_report_machinery").insert(machineryRows);
+        if (error) {
+          setSubmitError(`บันทึกข้อมูลเครื่องจักรไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const safetyTopicRows = safetyTopics
+        .filter((t) => t.trim())
+        .map((t) => ({ daily_report_id: report.id, topic: t.trim() }));
+      if (safetyTopicRows.length > 0) {
+        const { error } = await supabase.from("daily_report_safety_topics").insert(safetyTopicRows);
+        if (error) {
+          setSubmitError(`บันทึกหัวข้อ Safety Talk ไม่สำเร็จ: ${error.message}`);
+          return;
+        }
+      }
+
+      const materialRows = materialReceive
+        .filter((m) => m.material.trim())
+        .map((m) => ({
+          daily_report_id: report.id,
+          material_name: m.material.trim(),
+          quantity: m.quantity.trim() ? Number(m.quantity) : null,
+          unit: m.unit.trim() || null,
+          received_date: m.receivedDate || null,
+          remarks: m.remarks.trim() || null,
+        }));
+      if (materialRows.length > 0) {
+        const { error } = await supabase.from("daily_report_material_receive").insert(materialRows);
+        if (error) {
+          setSubmitError(`บันทึกข้อมูลวัสดุที่รับเข้าไม่สำเร็จ: ${error.message}`);
           return;
         }
       }

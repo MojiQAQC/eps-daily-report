@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import {
   Button,
   Field,
@@ -382,55 +383,66 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
             คน · หญิง {totals.female} คน)
           </p>
         </div>
-        {workforce.map((row, i) => (
-          <fieldset
-            key={i}
-            className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-[1fr_5rem_5rem_auto]"
-          >
-            <legend className="sr-only">กำลังคนแถวที่ {i + 1}</legend>
-            <Field label={i === 0 ? "ตำแหน่ง/หน้าที่ (Role)" : ""} htmlFor={`wf-role-${i}`}>
-              <TextInput
-                id={`wf-role-${i}`}
-                placeholder="เช่น ช่างเชื่อม, กรรมกร, โฟร์แมน"
-                value={row.role}
-                aria-label={`กำลังคนแถวที่ ${i + 1} ตำแหน่ง`}
-                onChange={(e) => updateWorkforce(i, { role: e.target.value })}
-              />
-            </Field>
-            <Field label={i === 0 ? "ชาย (คน)" : ""} htmlFor={`wf-m-${i}`}>
-              <TextInput
-                id={`wf-m-${i}`}
-                inputMode="numeric"
-                placeholder="0"
-                value={row.male}
-                aria-label={`กำลังคนแถวที่ ${i + 1} ชาย`}
-                onChange={(e) => updateWorkforce(i, { male: e.target.value })}
-              />
-            </Field>
-            <Field label={i === 0 ? "หญิง (คน)" : ""} htmlFor={`wf-f-${i}`}>
-              <TextInput
-                id={`wf-f-${i}`}
-                inputMode="numeric"
-                placeholder="0"
-                value={row.female}
-                aria-label={`กำลังคนแถวที่ ${i + 1} หญิง`}
-                onChange={(e) => updateWorkforce(i, { female: e.target.value })}
-              />
-            </Field>
-            <div className="flex items-end">
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setWorkforce((rows) => rows.filter((_, j) => j !== i))
-                }
-                disabled={workforce.length === 1}
-                aria-label={`ลบกำลังคนแถวที่ ${i + 1}`}
-              >
-                ลบ
-              </Button>
-            </div>
-          </fieldset>
-        ))}
+        <div className="overflow-x-auto rounded-md border border-line">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+              <tr>
+                <th className="px-3 py-2.5">ตำแหน่ง/หน้าที่ (Role)</th>
+                <th className="px-3 py-2.5 w-24">ชาย (คน)</th>
+                <th className="px-3 py-2.5 w-24">หญิง (คน)</th>
+                <th className="px-3 py-2.5 w-12">
+                  <span className="sr-only">ลบแถว</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {workforce.map((row, i) => (
+                <tr key={i}>
+                  <td className="px-3 py-2">
+                    <TextInput
+                      placeholder="เช่น ช่างเชื่อม, กรรมกร, โฟร์แมน"
+                      value={row.role}
+                      aria-label={`กำลังคนแถวที่ ${i + 1} ตำแหน่ง`}
+                      onChange={(e) => updateWorkforce(i, { role: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <TextInput
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={row.male}
+                      aria-label={`กำลังคนแถวที่ ${i + 1} ชาย`}
+                      onChange={(e) => updateWorkforce(i, { male: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <TextInput
+                      inputMode="numeric"
+                      placeholder="0"
+                      value={row.female}
+                      aria-label={`กำลังคนแถวที่ ${i + 1} หญิง`}
+                      onChange={(e) => updateWorkforce(i, { female: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setWorkforce((rows) => rows.filter((_, j) => j !== i))
+                      }
+                      disabled={workforce.length === 1}
+                      aria-label={`ลบกำลังคนแถวที่ ${i + 1}`}
+                      title="ลบแถว"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div>
           <Button
             variant="secondary"
@@ -447,79 +459,97 @@ function ReportForm({ initialType }: { initialType: ReportType }) {
         <h2 id="activities" className="text-lg font-bold">
           กิจกรรมงาน (Activities)
         </h2>
-        {activities.map((row, i) => (
-          <fieldset
-            key={i}
-            className="grid gap-3 rounded-md border border-line bg-surface p-4 sm:grid-cols-2"
-          >
-            <legend className="sr-only">กิจกรรมที่ {i + 1}</legend>
-            <Field label="พื้นที่ทำงาน (Area)" htmlFor={`act-area-${i}`}>
-              <TextInput
-                id={`act-area-${i}`}
-                placeholder="เช่น อาคาร Boiler ชั้น 2, Moving Floor MF01"
-                value={row.area}
-                onChange={(e) => updateActivity(i, { area: e.target.value })}
-              />
-            </Field>
-            <Field label="ผู้ควบคุมงาน (Supervisor)" htmlFor={`act-sup-${i}`}>
-              <TextInput
-                id={`act-sup-${i}`}
-                placeholder="ชื่อผู้ควบคุมงาน"
-                value={row.supervisor}
-                onChange={(e) => updateActivity(i, { supervisor: e.target.value })}
-              />
-            </Field>
-            <div className="sm:col-span-2">
-              <Field label="รายละเอียดงาน (Description)" htmlFor={`act-desc-${i}`}>
-                <TextArea
-                  id={`act-desc-${i}`}
-                  placeholder="ระบุงานที่ทำหรือที่วางแผนไว้ ให้ชัดเจนพอที่ทีมงานรอบถัดไปจะตรวจสอบได้"
-                  value={row.description}
-                  onChange={(e) => updateActivity(i, { description: e.target.value })}
-                />
-              </Field>
-            </div>
-            <Field
-              label={reportType === "morning_plan" ? "ความก้าวหน้าที่วางแผนไว้ (%)" : "ความก้าวหน้าที่ทำได้จริง (%)"}
-              htmlFor={`act-prog-${i}`}
-            >
-              <TextInput
-                id={`act-prog-${i}`}
-                inputMode="decimal"
-                placeholder="0–100"
-                value={row.progress}
-                onChange={(e) => updateActivity(i, { progress: e.target.value })}
-              />
-            </Field>
-            <Field label="สถานะ (Status)" htmlFor={`act-status-${i}`}>
-              <Select
-                id={`act-status-${i}`}
-                value={row.status}
-                onChange={(e) =>
-                  updateActivity(i, { status: e.target.value as "" | WorkStatus })
-                }
-              >
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-            <div className="sm:col-span-2">
-              <Button
-                variant="ghost"
-                onClick={() =>
-                  setActivities((rows) => rows.filter((_, j) => j !== i))
-                }
-                disabled={activities.length === 1}
-                aria-label={`ลบกิจกรรมที่ ${i + 1}`}
-              >
-                ลบกิจกรรม
-              </Button>
-            </div>
-          </fieldset>
-        ))}
+        <div className="overflow-x-auto rounded-md border border-line">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-surface2 text-xs font-semibold text-muted uppercase tracking-wider border-b border-line">
+              <tr>
+                <th className="px-3 py-2.5">พื้นที่ทำงาน (Area)</th>
+                <th className="px-3 py-2.5 min-w-[16rem]">รายละเอียดงาน (Description)</th>
+                <th className="px-3 py-2.5">ผู้ควบคุมงาน (Supervisor)</th>
+                <th className="px-3 py-2.5 w-28">
+                  {reportType === "morning_plan" ? "แผน (%)" : "จริง (%)"}
+                </th>
+                <th className="px-3 py-2.5 w-40">สถานะ (Status)</th>
+                <th className="px-3 py-2.5 w-12">
+                  <span className="sr-only">ลบแถว</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {activities.map((row, i) => (
+                <tr key={i}>
+                  <td className="px-3 py-2 align-top">
+                    <TextInput
+                      placeholder="เช่น อาคาร Boiler ชั้น 2, Moving Floor MF01"
+                      value={row.area}
+                      aria-label={`กิจกรรมที่ ${i + 1} พื้นที่ทำงาน`}
+                      onChange={(e) => updateActivity(i, { area: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <TextArea
+                      rows={2}
+                      placeholder="ระบุงานที่ทำหรือที่วางแผนไว้ ให้ชัดเจนพอที่ทีมงานรอบถัดไปจะตรวจสอบได้"
+                      value={row.description}
+                      aria-label={`กิจกรรมที่ ${i + 1} รายละเอียดงาน`}
+                      onChange={(e) => updateActivity(i, { description: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <TextInput
+                      placeholder="ชื่อผู้ควบคุมงาน"
+                      value={row.supervisor}
+                      aria-label={`กิจกรรมที่ ${i + 1} ผู้ควบคุมงาน`}
+                      onChange={(e) => updateActivity(i, { supervisor: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <TextInput
+                      inputMode="decimal"
+                      placeholder="0–100"
+                      value={row.progress}
+                      aria-label={`กิจกรรมที่ ${i + 1} ${
+                        reportType === "morning_plan"
+                          ? "ความก้าวหน้าที่วางแผนไว้"
+                          : "ความก้าวหน้าที่ทำได้จริง"
+                      }`}
+                      onChange={(e) => updateActivity(i, { progress: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-2 align-top">
+                    <Select
+                      aria-label={`กิจกรรมที่ ${i + 1} สถานะ`}
+                      value={row.status}
+                      onChange={(e) =>
+                        updateActivity(i, { status: e.target.value as "" | WorkStatus })
+                      }
+                    >
+                      {STATUS_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </td>
+                  <td className="px-3 py-2 align-top text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        setActivities((rows) => rows.filter((_, j) => j !== i))
+                      }
+                      disabled={activities.length === 1}
+                      aria-label={`ลบกิจกรรมที่ ${i + 1}`}
+                      title="ลบแถว"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div>
           <Button
             variant="secondary"
